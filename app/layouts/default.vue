@@ -114,15 +114,43 @@
           </button>
 
           <!-- User menu -->
-          <div class="flex items-center space-x-3">
-            <div class="h-8 w-8 overflow-hidden rounded-full bg-gray-300">
-              <img
-                src="https://ui-avatars.com/api/?name=Admin+User&background=3b82f6&color=fff"
-                alt="User avatar"
-                class="h-full w-full object-cover"
-              />
+          <div class="relative">
+            <button
+              class="flex items-center space-x-3 rounded-lg p-1 hover:bg-gray-100"
+              @click="userMenuOpen = !userMenuOpen"
+            >
+              <div class="h-8 w-8 overflow-hidden rounded-full bg-gray-300">
+                <img
+                  :src="userAvatar"
+                  alt="User avatar"
+                  class="h-full w-full object-cover"
+                />
+              </div>
+              <span class="hidden text-sm font-medium text-gray-700 md:block">{{ userName }}</span>
+              <svg class="hidden h-4 w-4 text-gray-400 md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            <!-- Dropdown menu -->
+            <div
+              v-if="userMenuOpen"
+              class="absolute right-0 mt-2 w-48 origin-top-right rounded-lg bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5"
+            >
+              <div class="border-b border-gray-100 px-4 py-2">
+                <p class="text-sm font-medium text-gray-900">{{ userName }}</p>
+                <p class="truncate text-xs text-gray-500">{{ userEmail }}</p>
+              </div>
+              <button
+                class="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="handleLogout"
+              >
+                <svg class="mr-2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Sign out
+              </button>
             </div>
-            <span class="hidden text-sm font-medium text-gray-700 md:block">Admin User</span>
           </div>
         </div>
       </header>
@@ -136,11 +164,36 @@
 </template>
 
 <script setup lang="ts">
+const { user, logout } = useAuth()
+
 const sidebarOpen = ref(false)
+const userMenuOpen = ref(false)
+
+const userName = computed(() => user.value?.displayName || user.value?.email?.split('@')[0] || 'User')
+const userEmail = computed(() => user.value?.email || '')
+const userAvatar = computed(() => {
+  const name = userName.value.replace(' ', '+')
+  return `https://ui-avatars.com/api/?name=${name}&background=3b82f6&color=fff`
+})
 
 const closeSidebarOnMobile = () => {
   if (window.innerWidth < 1024) {
     sidebarOpen.value = false
   }
 }
+
+const handleLogout = async () => {
+  userMenuOpen.value = false
+  await logout()
+}
+
+// Close user menu when clicking outside
+onMounted(() => {
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement
+    if (!target.closest('.relative')) {
+      userMenuOpen.value = false
+    }
+  })
+})
 </script>
