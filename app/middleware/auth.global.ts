@@ -1,6 +1,6 @@
 export default defineNuxtRouteMiddleware(async (to) => {
-  // Skip middleware for auth pages
-  if (to.path === '/login' || to.path === '/register') {
+  // Only run on client side
+  if (import.meta.server) {
     return
   }
 
@@ -9,6 +9,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // Initialize auth if not already done
   if (loading.value) {
     await initAuth()
+  }
+
+  // Skip middleware for auth pages (but redirect if already logged in)
+  if (to.path === '/login' || to.path === '/register') {
+    if (user.value) {
+      return navigateTo('/')
+    }
+    return
   }
 
   // Redirect to login if not authenticated
