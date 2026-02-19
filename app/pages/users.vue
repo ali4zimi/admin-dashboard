@@ -8,6 +8,7 @@
       </div>
       <button
         class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+        @click="openAddModal"
       >
         <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -20,19 +21,29 @@
     <div class="mb-6 flex flex-col gap-4 rounded-lg bg-white p-4 shadow-sm sm:flex-row sm:items-center">
       <div class="flex-1">
         <input
+          v-model="searchTerm"
           type="text"
           placeholder="Search users..."
           class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          @input="debouncedSearch"
         />
       </div>
       <div class="flex gap-2">
-        <select class="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+        <select
+          v-model="filterRole"
+          class="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          @change="handleSearch"
+        >
           <option>All Roles</option>
           <option>Admin</option>
           <option>Editor</option>
           <option>User</option>
         </select>
-        <select class="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+        <select
+          v-model="filterStatus"
+          class="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          @change="handleSearch"
+        >
           <option>All Status</option>
           <option>Active</option>
           <option>Inactive</option>
@@ -40,8 +51,36 @@
       </div>
     </div>
 
+    <!-- Loading state -->
+    <div v-if="loading" class="flex items-center justify-center rounded-lg bg-white p-12 shadow-sm">
+      <svg class="h-8 w-8 animate-spin text-blue-600" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+      </svg>
+    </div>
+
+    <!-- Empty state -->
+    <div v-else-if="users.length === 0" class="rounded-lg bg-white p-12 text-center shadow-sm">
+      <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+        <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+        </svg>
+      </div>
+      <h3 class="mb-1 text-lg font-medium text-gray-900">No users found</h3>
+      <p class="mb-4 text-sm text-gray-500">Get started by adding your first user.</p>
+      <button
+        class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+        @click="openAddModal"
+      >
+        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+        Add User
+      </button>
+    </div>
+
     <!-- Users table -->
-    <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+    <div v-else class="overflow-hidden rounded-lg bg-white shadow-sm">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -91,21 +130,23 @@
                   {{ user.status }}
                 </span>
               </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ user.joined }}</td>
+              <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ formatDate(user.joined) }}</td>
               <td class="whitespace-nowrap px-6 py-4 text-right text-sm">
                 <div class="flex justify-end space-x-2">
-                  <button class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-blue-600">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  </button>
-                  <button class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-green-600">
+                  <button
+                    class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-green-600"
+                    title="Edit user"
+                    @click="openEditModal(user)"
+                  >
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                   </button>
-                  <button class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-600">
+                  <button
+                    class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-600"
+                    title="Delete user"
+                    @click="openDeleteModal(user)"
+                  >
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -117,50 +158,110 @@
         </table>
       </div>
 
-      <!-- Pagination -->
-      <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
-        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-          <div>
-            <p class="text-sm text-gray-700">
-              Showing <span class="font-medium">1</span> to <span class="font-medium">10</span> of <span class="font-medium">97</span> results
-            </p>
-          </div>
-          <div>
-            <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm">
-              <button class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
-                </svg>
-              </button>
-              <button class="relative inline-flex items-center bg-blue-600 px-4 py-2 text-sm font-semibold text-white">1</button>
-              <button class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">2</button>
-              <button class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">3</button>
-              <button class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
-                </svg>
-              </button>
-            </nav>
-          </div>
-        </div>
+      <!-- Results info -->
+      <div class="border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+        <p class="text-sm text-gray-700">
+          Showing <span class="font-medium">{{ users.length }}</span> users
+        </p>
       </div>
     </div>
+
+    <!-- User Form Modal -->
+    <UserFormModal
+      v-model="showUserModal"
+      :user="selectedUser"
+      @saved="handleUserSaved"
+    />
+
+    <!-- Delete Confirmation Modal -->
+    <DeleteConfirmModal
+      v-model="showDeleteModal"
+      :user-id="userToDelete?.id || null"
+      :user-name="userToDelete?.name || ''"
+      @deleted="handleUserDeleted"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import type { UserData } from '~/composables/useUsers'
+
 useHead({
   title: 'User Management - Admin Panel'
 })
 
-const users = ref([
-  { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Admin', status: 'Active', joined: 'Jan 15, 2026' },
-  { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'Editor', status: 'Active', joined: 'Jan 20, 2026' },
-  { id: 3, name: 'Bob Wilson', email: 'bob@example.com', role: 'User', status: 'Active', joined: 'Feb 01, 2026' },
-  { id: 4, name: 'Alice Brown', email: 'alice@example.com', role: 'Editor', status: 'Inactive', joined: 'Feb 05, 2026' },
-  { id: 5, name: 'Charlie Davis', email: 'charlie@example.com', role: 'User', status: 'Active', joined: 'Feb 10, 2026' },
-  { id: 6, name: 'Diana Evans', email: 'diana@example.com', role: 'User', status: 'Active', joined: 'Feb 12, 2026' },
-  { id: 7, name: 'Frank Garcia', email: 'frank@example.com', role: 'Admin', status: 'Active', joined: 'Feb 14, 2026' },
-  { id: 8, name: 'Grace Harris', email: 'grace@example.com', role: 'Editor', status: 'Inactive', joined: 'Feb 16, 2026' },
-])
+const { users, loading, fetchUsers, searchUsers } = useUsers()
+
+// Search and filters
+const searchTerm = ref('')
+const filterRole = ref('All Roles')
+const filterStatus = ref('All Status')
+
+// Modal states
+const showUserModal = ref(false)
+const showDeleteModal = ref(false)
+const selectedUser = ref<UserData | null>(null)
+const userToDelete = ref<UserData | null>(null)
+
+// Debounce search
+let searchTimeout: ReturnType<typeof setTimeout>
+const debouncedSearch = () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    handleSearch()
+  }, 300)
+}
+
+const handleSearch = () => {
+  searchUsers(searchTerm.value, filterRole.value, filterStatus.value)
+}
+
+// Modal handlers
+const openAddModal = () => {
+  selectedUser.value = null
+  showUserModal.value = true
+}
+
+const openEditModal = (user: UserData) => {
+  selectedUser.value = user
+  showUserModal.value = true
+}
+
+const openDeleteModal = (user: UserData) => {
+  userToDelete.value = user
+  showDeleteModal.value = true
+}
+
+const handleUserSaved = () => {
+  // Users list is automatically updated by the composable
+}
+
+const handleUserDeleted = () => {
+  userToDelete.value = null
+}
+
+// Format date helper
+const formatDate = (date: any) => {
+  if (!date) return '-'
+  
+  // Handle Firestore Timestamp
+  if (date?.toDate) {
+    date = date.toDate()
+  }
+  
+  // Handle Date object or string
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return '-'
+  
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+// Fetch users on mount
+onMounted(() => {
+  fetchUsers()
+})
 </script>
