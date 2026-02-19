@@ -176,9 +176,10 @@
     <!-- Delete Confirmation Modal -->
     <DeleteConfirmModal
       v-model="showDeleteModal"
-      :user-id="userToDelete?.id || null"
-      :user-name="userToDelete?.name || ''"
-      @deleted="handleUserDeleted"
+      :item-id="userToDelete?.id || null"
+      :item-name="userToDelete?.name || ''"
+      item-type="User"
+      @confirm="handleUserDeleted"
     />
   </div>
 </template>
@@ -236,7 +237,10 @@ const handleUserSaved = () => {
   // Users list is automatically updated by the composable
 }
 
-const handleUserDeleted = () => {
+const handleUserDeleted = async () => {
+  if (userToDelete.value?.id) {
+    await deleteUser(userToDelete.value.id)
+  }
   userToDelete.value = null
 }
 

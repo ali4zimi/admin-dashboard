@@ -6,9 +6,9 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
       </div>
-      <h4 class="mb-2 text-lg font-medium text-gray-900">Delete User</h4>
+      <h4 class="mb-2 text-lg font-medium text-gray-900">Delete {{ itemType }}</h4>
       <p class="text-sm text-gray-500">
-        Are you sure you want to delete <span class="font-medium">{{ userName }}</span>? This action cannot be undone.
+        Are you sure you want to delete <span class="font-medium">{{ itemName }}</span>? This action cannot be undone.
       </p>
     </div>
 
@@ -39,18 +39,19 @@
 <script setup lang="ts">
 interface Props {
   modelValue: boolean
-  userId: string | null
-  userName: string
+  itemId: string | null
+  itemName: string
+  itemType?: string
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  itemType: 'Item'
+})
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'deleted': []
+  'confirm': []
 }>()
-
-const { deleteUser } = useUsers()
 
 const loading = ref(false)
 
@@ -60,16 +61,15 @@ const isOpen = computed({
 })
 
 const handleDelete = async () => {
-  if (!props.userId) return
+  if (!props.itemId) return
 
   loading.value = true
 
   try {
-    await deleteUser(props.userId)
-    emit('deleted')
+    emit('confirm')
     isOpen.value = false
   } catch (e) {
-    console.error('Error deleting user:', e)
+    console.error('Error during delete:', e)
   } finally {
     loading.value = false
   }
