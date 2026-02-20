@@ -1,3 +1,4 @@
+
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -6,9 +7,11 @@ import {
   updateProfile,
   type User,
 } from 'firebase/auth'
+import { collection, setDoc, doc, serverTimestamp } from 'firebase/firestore'
 
 export const useAuth = () => {
-  const { auth } = useFirebase()
+
+  const { auth, firestore } = useFirebase()
   const user = useState<User | null>('auth-user', () => null)
   const authLoading = useState<boolean>('auth-loading', () => true)
   const error = useState<string | null>('auth-error', () => null)
@@ -50,12 +53,31 @@ export const useAuth = () => {
     try {
       if (!auth) throw new Error('Firebase auth not initialized')
       const result = await createUserWithEmailAndPassword(auth, email, password)
-      
+
       if (displayName && result.user) {
         await updateProfile(result.user, { displayName })
       }
-      
+
       user.value = result.user
+
+      // Store user data in Firestore
+      if (firestore && result.user) {
+        try {
+          await setDoc(doc(firestore, 'users', result.user.uid), {
+            uid: result.user.uid,
+            email: result.user.email,
+            name: result.user.displayName || '',
+            role: 'User', // Default role
+            status: 'Active', // Default status
+            joined: serverTimestamp(),
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          })
+        } catch (err) {
+          console.error('Error saving user to Firestore:', err)
+        }
+      }
+
       return result.user
     } catch (e: any) {
       error.value = getAuthErrorMessage(e.code)
