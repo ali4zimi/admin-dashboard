@@ -7,7 +7,7 @@ import {
   getMetadata,
   type UploadTaskSnapshot,
 } from 'firebase/storage'
-import { collection, addDoc, serverTimestamp, getDocs, query, orderBy } from 'firebase/firestore'
+import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, deleteDoc } from 'firebase/firestore'
 
 export interface FileData {
   id: string
@@ -220,6 +220,8 @@ export const useFiles = () => {
             }
           }
         )
+
+        
       })
     })
 
@@ -230,11 +232,33 @@ export const useFiles = () => {
 
   // Delete a file
   const deleteFile = async (file: FileData) => {
-    if (!storage) return
+    if (!storage || !firestore) return
 
     try {
       const fileRef = storageRef(storage, file.fullPath)
       await deleteObject(fileRef)
+
+      // Remove from Firestore
+      try {
+        // If file.id is a Firestore doc id, use it; otherwise, try to find by fullPath
+        let docId = file.id
+        // If id looks like a path, try to find the Firestore doc by fullPath
+        if (docId.includes('/')) {
+          // Find the Firestore doc with matching fullPath
+          const { getDocs, collection, query, where, deleteDoc, doc } = await import('firebase/firestore')
+          const q = query(collection(firestore, 'files'), where('fullPath', '==', file.fullPath))
+          const snapshot = await getDocs(q)
+          snapshot.forEach(async (d) => {
+            await deleteDoc(doc(firestore, 'files', d.id))
+          })
+        } else {
+          // Delete by doc id
+          const { deleteDoc, doc } = await import('firebase/firestore')
+          await deleteDoc(doc(firestore, 'files', docId))
+        }
+      } catch (err) {
+        console.error('Error deleting file metadata from Firestore:', err)
+      }
 
       // Remove from local array
       const index = files.value.findIndex((f) => f.id === file.id)
