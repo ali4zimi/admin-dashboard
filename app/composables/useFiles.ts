@@ -1,12 +1,13 @@
+
 import {
   ref as storageRef,
   uploadBytesResumable,
   getDownloadURL,
   deleteObject,
-  listAll,
   getMetadata,
   type UploadTaskSnapshot,
 } from 'firebase/storage'
+import { collection, addDoc, serverTimestamp, getDocs, query, orderBy } from 'firebase/firestore'
 
 export interface FileData {
   id: string
@@ -62,57 +63,36 @@ const storageStats = ref({
   others: { count: 0, size: 0 },
 })
 
-export const useFiles = () => {
-  const { storage } = useFirebase()
 
-  // Fetch all files from a path
-  const fetchFiles = async (path: string = 'uploads') => {
-    if (!storage) return
+export const useFiles = () => {
+  const { storage, firestore } = useFirebase()
+
+  // Fetch all files from Firestore (not storage)
+  const fetchFiles = async () => {
+    if (!firestore) return
 
     loading.value = true
     try {
-      const listRef = storageRef(storage, path)
-      const result = await listAll(listRef)
-
-      const filePromises = result.items.map(async (itemRef) => {
-        const metadata = await getMetadata(itemRef)
-        const downloadUrl = await getDownloadURL(itemRef)
-
-        // Use original filename from custom metadata if available, otherwise strip timestamp prefix
-        let displayName = itemRef.name
-        if (metadata.customMetadata?.originalName) {
-          displayName = metadata.customMetadata.originalName
-        } else {
-          // Strip timestamp prefix (format: timestamp_filename)
-          const underscoreIndex = displayName.indexOf('_')
-          if (underscoreIndex > 0 && /^\d+$/.test(displayName.substring(0, underscoreIndex))) {
-            displayName = displayName.substring(underscoreIndex + 1)
-          }
-        }
-
+      const q = query(collection(firestore, 'files'), orderBy('createdAt', 'desc'))
+      const snapshot = await getDocs(q)
+      files.value = snapshot.docs.map(doc => {
+        const data = doc.data()
         return {
-          id: itemRef.fullPath,
-          name: displayName,
-          fullPath: itemRef.fullPath,
-          type: getFileType(metadata.contentType || 'application/octet-stream'),
-          size: metadata.size,
-          sizeFormatted: formatFileSize(metadata.size),
-          contentType: metadata.contentType || 'application/octet-stream',
-          downloadUrl,
-          createdAt: new Date(metadata.timeCreated),
-          updatedAt: new Date(metadata.updated),
+          id: doc.id,
+          name: data.name,
+          fullPath: data.fullPath,
+          type: data.type,
+          size: data.size,
+          sizeFormatted: formatFileSize(data.size),
+          contentType: data.contentType,
+          downloadUrl: data.downloadUrl,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
         } as FileData
       })
-
-      files.value = await Promise.all(filePromises)
-
-      // Sort by date (newest first)
-      files.value.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-
-      // Calculate storage stats
       calculateStats()
     } catch (e) {
-      console.error('Error fetching files:', e)
+      console.error('Error fetching files from Firestore:', e)
     } finally {
       loading.value = false
     }
@@ -215,6 +195,24 @@ export const useFiles = () => {
 
               // Add to files array
               files.value.unshift(newFile)
+
+              // Store metadata in Firestore
+              if (firestore) {
+                try {
+                  await addDoc(collection(firestore, 'files'), {
+                    name: newFile.name,
+                    fullPath: newFile.fullPath,
+                    type: newFile.type,
+                    size: newFile.size,
+                    contentType: newFile.contentType,
+                    downloadUrl: newFile.downloadUrl,
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                  })
+                } catch (err) {
+                  console.error('Error saving file metadata to Firestore:', err)
+                }
+              }
               resolve(newFile)
             } catch (e) {
               console.error('Error getting download URL:', e)
@@ -263,6 +261,7 @@ export const useFiles = () => {
   }
 
   // Search files
+  // TODO: Implement Firestore-powered search and filter for files
   const searchFiles = (term: string, typeFilter: string = 'All Types') => {
     let filtered = files.value
 
