@@ -24,8 +24,11 @@ export interface UserData {
   updatedAt?: Timestamp
 }
 
+import { useActivityLog } from '~/composables/useActivityLog'
+
 export const useUsers = () => {
   const { firestore } = useFirebase()
+  const { logActivity } = useActivityLog()
   const users = useState<UserData[]>('users-list', () => [])
   const loading = useState<boolean>('users-loading', () => false)
   const error = useState<string | null>('users-error', () => null)
@@ -98,6 +101,13 @@ export const useUsers = () => {
       }
 
       users.value = [newUser, ...users.value]
+      // Log activity
+      await logActivity({
+        action: 'create',
+        entityType: 'user',
+        entityId: docRef.id,
+        entityName: userData.name,
+      })
       return newUser
     } catch (e: any) {
       error.value = e.message || 'Failed to create user'
@@ -125,6 +135,13 @@ export const useUsers = () => {
         user.id === id ? { ...user, ...userData } : user
       )
 
+      // Log activity
+      await logActivity({
+        action: 'update',
+        entityType: 'user',
+        entityId: id,
+        entityName: userData.name || '',
+      })
       return { id, ...userData }
     } catch (e: any) {
       error.value = e.message || 'Failed to update user'
@@ -145,6 +162,12 @@ export const useUsers = () => {
       const docRef = doc(firestore, COLLECTION_NAME, id)
       await deleteDoc(docRef)
 
+      // Log activity
+      await logActivity({
+        action: 'delete',
+        entityType: 'user',
+        entityId: id,
+      })
       users.value = users.value.filter(user => user.id !== id)
       return true
     } catch (e: any) {

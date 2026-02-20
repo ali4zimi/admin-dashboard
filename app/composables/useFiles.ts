@@ -9,6 +9,7 @@ import {
 } from 'firebase/storage'
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, deleteDoc } from 'firebase/firestore'
 
+  import { useActivityLog } from '~/composables/useActivityLog'
 export interface FileData {
   id: string
   name: string
@@ -64,8 +65,10 @@ const storageStats = ref({
 })
 
 
+
 export const useFiles = () => {
   const { storage, firestore } = useFirebase()
+  const { logActivity } = useActivityLog()
 
   // Fetch all files from Firestore (not storage)
   const fetchFiles = async () => {
@@ -209,8 +212,17 @@ export const useFiles = () => {
                     createdAt: serverTimestamp(),
                     updatedAt: serverTimestamp(),
                   })
+                  // Log activity in activityLog collection
+                  await addDoc(collection(firestore, 'activityLog'), {
+                    action: 'upload',
+                    fileName: newFile.name,
+                    fileId: newFile.fullPath,
+                    fileType: newFile.type,
+                    fileSize: newFile.size,
+                    timestamp: serverTimestamp(),
+                  })
                 } catch (err) {
-                  console.error('Error saving file metadata to Firestore:', err)
+                  console.error('Error saving file metadata or activity log to Firestore:', err)
                 }
               }
               resolve(newFile)
@@ -245,16 +257,34 @@ export const useFiles = () => {
         // If id looks like a path, try to find the Firestore doc by fullPath
         if (docId.includes('/')) {
           // Find the Firestore doc with matching fullPath
-          const { getDocs, collection, query, where, deleteDoc, doc } = await import('firebase/firestore')
+          const { getDocs, collection, query, where, deleteDoc, doc, addDoc, serverTimestamp } = await import('firebase/firestore')
           const q = query(collection(firestore, 'files'), where('fullPath', '==', file.fullPath))
           const snapshot = await getDocs(q)
           snapshot.forEach(async (d) => {
             await deleteDoc(doc(firestore, 'files', d.id))
+            // Log activity
+            await addDoc(collection(firestore, 'activityLog'), {
+              action: 'delete',
+              fileName: file.name,
+              fileId: file.fullPath,
+              fileType: file.type,
+              fileSize: file.size,
+              timestamp: serverTimestamp(),
+            })
           })
         } else {
           // Delete by doc id
-          const { deleteDoc, doc } = await import('firebase/firestore')
+          const { deleteDoc, doc, addDoc, collection, serverTimestamp } = await import('firebase/firestore')
           await deleteDoc(doc(firestore, 'files', docId))
+          // Log activity
+          await addDoc(collection(firestore, 'activityLog'), {
+            action: 'delete',
+            fileName: file.name,
+            fileId: file.fullPath,
+            fileType: file.type,
+            fileSize: file.size,
+            timestamp: serverTimestamp(),
+          })
         }
       } catch (err) {
         console.error('Error deleting file metadata from Firestore:', err)

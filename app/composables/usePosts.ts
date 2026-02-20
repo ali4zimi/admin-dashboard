@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   type Timestamp,
 } from 'firebase/firestore'
+import { useActivityLog } from '~/composables/useActivityLog'
 
 export interface PostData {
   id?: string
@@ -42,6 +43,7 @@ const GRADIENTS = [
 export const usePosts = () => {
   const { firestore } = useFirebase()
   const { user } = useAuth()
+  const { logActivity } = useActivityLog()
   const posts = useState<PostData[]>('posts-list', () => [])
   const loading = useState<boolean>('posts-loading', () => false)
   const error = useState<string | null>('posts-error', () => null)
@@ -128,6 +130,14 @@ export const usePosts = () => {
       }
 
       posts.value = [newPost, ...posts.value]
+      // Log activity
+      await logActivity({
+        action: 'create',
+        entityType: 'post',
+        entityId: docRef.id,
+        entityName: postData.title,
+        userId: user.value?.uid || '',
+      })
       return newPost
     } catch (e: any) {
       error.value = e.message || 'Failed to create post'
@@ -155,6 +165,14 @@ export const usePosts = () => {
         post.id === id ? { ...post, ...postData } : post
       )
 
+      // Log activity
+      await logActivity({
+        action: 'update',
+        entityType: 'post',
+        entityId: id,
+        entityName: postData.title || '',
+        userId: user.value?.uid || '',
+      })
       return { id, ...postData }
     } catch (e: any) {
       error.value = e.message || 'Failed to update post'
@@ -175,6 +193,13 @@ export const usePosts = () => {
       const docRef = doc(firestore, COLLECTION_NAME, id)
       await deleteDoc(docRef)
 
+      // Log activity
+      await logActivity({
+        action: 'delete',
+        entityType: 'post',
+        entityId: id,
+        userId: user.value?.uid || '',
+      })
       posts.value = posts.value.filter(post => post.id !== id)
       return true
     } catch (e: any) {

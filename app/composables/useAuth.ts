@@ -7,11 +7,14 @@ import {
   updateProfile,
   type User,
 } from 'firebase/auth'
+
+import { useActivityLog } from '~/composables/useActivityLog'
 import { collection, setDoc, doc, serverTimestamp } from 'firebase/firestore'
 
 export const useAuth = () => {
 
   const { auth, firestore } = useFirebase()
+  const { logActivity } = useActivityLog()
   const user = useState<User | null>('auth-user', () => null)
   const authLoading = useState<boolean>('auth-loading', () => true)
   const error = useState<string | null>('auth-error', () => null)
@@ -40,6 +43,13 @@ export const useAuth = () => {
       if (!auth) throw new Error('Firebase auth not initialized')
       const result = await signInWithEmailAndPassword(auth, email, password)
       user.value = result.user
+      // Log login activity
+      await logActivity({
+        action: 'login',
+        entityType: 'auth',
+        userId: result.user.uid,
+        entityName: result.user.displayName || result.user.email || '',
+      })
       return result.user
     } catch (e: any) {
       error.value = getAuthErrorMessage(e.code)
@@ -78,6 +88,13 @@ export const useAuth = () => {
         }
       }
 
+      // Log register activity
+      await logActivity({
+        action: 'register',
+        entityType: 'auth',
+        userId: result.user.uid,
+        entityName: result.user.displayName || result.user.email || '',
+      })
       return result.user
     } catch (e: any) {
       error.value = getAuthErrorMessage(e.code)
@@ -90,7 +107,17 @@ export const useAuth = () => {
 
     try {
       if (!auth) throw new Error('Firebase auth not initialized')
+      const currentUser = user.value
       await signOut(auth)
+      // Log logout activity
+      if (currentUser) {
+        await logActivity({
+          action: 'logout',
+          entityType: 'auth',
+          userId: currentUser.uid,
+          entityName: currentUser.displayName || currentUser.email || '',
+        })
+      }
       user.value = null
       navigateTo('/login')
     } catch (e: any) {
