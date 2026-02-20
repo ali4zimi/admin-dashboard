@@ -88,7 +88,10 @@
         :key="post.id"
         class="overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md"
       >
-        <div class="h-40 bg-gradient-to-br" :class="post.gradient || 'from-blue-400 to-blue-600'"></div>
+        <div class="h-40 w-full relative">
+          <img v-if="post.cover" :src="post.cover" alt="Cover" class="object-cover w-full h-full" />
+          <div v-else class="h-40 bg-gradient-to-br w-full" :class="post.gradient || 'from-blue-400 to-blue-600'"></div>
+        </div>
         <div class="p-4">
           <div class="mb-2 flex items-center justify-between">
             <span

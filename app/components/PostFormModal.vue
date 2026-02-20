@@ -2,6 +2,39 @@
   <BaseModal v-model="isOpen" :title="isEditing ? 'Edit Post' : 'Create New Post'" size="lg">
     <form id="post-form" @submit.prevent="handleSubmit">
       <div class="space-y-4">
+        <!-- Cover Image Upload -->
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-700">Cover Image</label>
+          <div class="flex items-center gap-4">
+            <div v-if="form.cover" class="relative h-20 w-32 rounded overflow-hidden border">
+              <img :src="form.cover" alt="Cover Preview" class="object-cover w-full h-full" />
+              <button type="button" class="absolute top-1 right-1 bg-white/80 rounded-full p-1 text-gray-600 hover:text-red-600" @click="form.cover = ''">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <button type="button" class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="showCoverUpload = true" v-if="!form.cover">
+              Upload Cover
+            </button>
+            <button type="button" class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="openImagePicker" v-if="!form.cover">
+              Pick from Uploaded
+            </button>
+          </div>
+          <FileUploadModal v-model="showCoverUpload" @uploaded="handleCoverUploaded" />
+
+          <!-- Image Picker Modal -->
+          <BaseModal v-model="showImagePicker" title="Select Cover Image" size="lg">
+            <div class="grid grid-cols-3 gap-4 max-h-72 overflow-y-auto p-2">
+              <div v-for="img in imageFiles" :key="img.id" class="relative group cursor-pointer border rounded overflow-hidden" @click="selectCover(img.downloadUrl)">
+                <img :src="img.downloadUrl" :alt="img.name" class="object-cover w-full h-24" />
+                <div class="absolute inset-0 bg-black/10 group-hover:bg-blue-500/30 transition"></div>
+              </div>
+              <div v-if="imageFiles.length === 0" class="col-span-3 text-center text-gray-500 py-8">No images found.</div>
+            </div>
+            <template #footer>
+              <button type="button" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="showImagePicker = false">Cancel</button>
+            </template>
+          </BaseModal>
+        </div>
         <!-- Title -->
         <div>
           <label for="title" class="mb-1 block text-sm font-medium text-gray-700">Title</label>
@@ -118,7 +151,32 @@ const emit = defineEmits<{
 
 const { createPost, updatePost } = usePosts()
 
+
 const loading = ref(false)
+
+const showCoverUpload = ref(false)
+const showImagePicker = ref(false)
+const { files, fetchFiles } = useFiles()
+const imageFiles = computed(() => files.value.filter(f => f.type === 'Image'))
+
+const handleCoverUploaded = async () => {
+  await fetchFiles('uploads')
+  const imageFile = files.value.find(f => f.type === 'Image')
+  if (imageFile) {
+    form.value.cover = imageFile.downloadUrl
+  }
+  showCoverUpload.value = false
+}
+
+const openImagePicker = async () => {
+  await fetchFiles('uploads')
+  showImagePicker.value = true
+}
+
+const selectCover = (url: string) => {
+  form.value.cover = url
+  showImagePicker.value = false
+}
 
 const isOpen = computed({
   get: () => props.modelValue,
@@ -133,6 +191,7 @@ const form = ref({
   content: '',
   category: 'Technology' as 'Technology' | 'Business' | 'Design' | 'Marketing',
   status: 'Draft' as 'Published' | 'Draft' | 'Archived',
+  cover: '' as string, // URL to cover image
 })
 
 // Reset form when modal opens/closes or post changes
@@ -146,6 +205,7 @@ watch(
         content: props.post.content || '',
         category: props.post.category,
         status: props.post.status,
+        cover: props.post.cover || '',
       }
     } else if (props.modelValue) {
       form.value = {
@@ -154,6 +214,7 @@ watch(
         content: '',
         category: 'Technology',
         status: 'Draft',
+        cover: '',
       }
     }
   },

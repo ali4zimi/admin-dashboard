@@ -25,6 +25,7 @@ export interface PostData {
   date?: Timestamp | Date
   createdAt?: Timestamp
   updatedAt?: Timestamp
+  cover?: string // URL to cover image
 }
 
 const GRADIENTS = [
