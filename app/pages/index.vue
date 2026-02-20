@@ -12,7 +12,7 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-gray-500">Total Users</p>
-            <p class="mt-1 text-3xl font-bold text-gray-900">2,543</p>
+            <p class="mt-1 text-3xl font-bold text-gray-900">{{ users.length }}</p>
           </div>
           <div class="rounded-full bg-blue-100 p-3">
             <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -20,16 +20,13 @@
             </svg>
           </div>
         </div>
-        <p class="mt-2 text-sm text-green-600">
-          <span class="font-medium">+12%</span> from last month
-        </p>
       </div>
 
       <div class="rounded-lg bg-white p-6 shadow-sm">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-gray-500">Total Posts</p>
-            <p class="mt-1 text-3xl font-bold text-gray-900">1,892</p>
+            <p class="mt-1 text-3xl font-bold text-gray-900">{{ posts.length }}</p>
           </div>
           <div class="rounded-full bg-green-100 p-3">
             <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -37,16 +34,13 @@
             </svg>
           </div>
         </div>
-        <p class="mt-2 text-sm text-green-600">
-          <span class="font-medium">+8%</span> from last month
-        </p>
       </div>
 
       <div class="rounded-lg bg-white p-6 shadow-sm">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-gray-500">Total Files</p>
-            <p class="mt-1 text-3xl font-bold text-gray-900">4,721</p>
+            <p class="mt-1 text-3xl font-bold text-gray-900">{{ files.length }}</p>
           </div>
           <div class="rounded-full bg-purple-100 p-3">
             <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,16 +48,13 @@
             </svg>
           </div>
         </div>
-        <p class="mt-2 text-sm text-green-600">
-          <span class="font-medium">+23%</span> from last month
-        </p>
       </div>
 
       <div class="rounded-lg bg-white p-6 shadow-sm">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-gray-500">Storage Used</p>
-            <p class="mt-1 text-3xl font-bold text-gray-900">45.2 GB</p>
+            <p class="mt-1 text-3xl font-bold text-gray-900">{{ storageUsed }}</p>
           </div>
           <div class="rounded-full bg-orange-100 p-3">
             <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,9 +62,6 @@
             </svg>
           </div>
         </div>
-        <p class="mt-2 text-sm text-gray-600">
-          <span class="font-medium">45%</span> of 100 GB used
-        </p>
       </div>
     </div>
 
@@ -184,7 +172,31 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, ref, computed } from 'vue'
+import { useUsers } from '~/composables/useUsers'
+import { usePosts } from '~/composables/usePosts'
+import { useFiles } from '~/composables/useFiles'
+
 useHead({
   title: 'Dashboard - Admin Panel'
+})
+
+const { users, fetchUsers } = useUsers ? useUsers() : { users: ref([]), fetchUsers: () => {} }
+const { posts, fetchPosts } = usePosts()
+const { files, fetchFiles, storageStats } = useFiles()
+
+const storageUsed = computed(() => {
+  if (storageStats.value && storageStats.value.images && storageStats.value.documents && storageStats.value.videos && storageStats.value.others) {
+    const total = storageStats.value.images.size + storageStats.value.documents.size + storageStats.value.videos.size + storageStats.value.others.size
+    // Convert bytes to GB with 1 decimal
+    return (total / (1024 * 1024 * 1024)).toFixed(1) + ' GB'
+  }
+  return '0 GB'
+})
+
+onMounted(() => {
+  fetchUsers && fetchUsers()
+  fetchPosts()
+  fetchFiles('uploads')
 })
 </script>
