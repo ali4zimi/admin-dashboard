@@ -45,10 +45,17 @@ export const useAuth = () => {
       user.value = result.user
       // Log login activity
       await logActivity({
-        action: 'login',
-        entityType: 'auth',
-        userId: result.user.uid,
-        entityName: result.user.displayName || result.user.email || '',
+        action: 'auth.login',
+        actorId: result.user.uid,
+        actorType: 'user',
+        targetType: 'auth',
+        targetId: result.user.uid,
+        status: 'success',
+        severity: 'info',
+        message: `${result.user.displayName || result.user.email || 'User'} logged in`,
+        metadata: {
+          email: result.user.email,
+        },
       })
       return result.user
     } catch (e: any) {
@@ -90,10 +97,17 @@ export const useAuth = () => {
 
       // Log register activity
       await logActivity({
-        action: 'register',
-        entityType: 'auth',
-        userId: result.user.uid,
-        entityName: result.user.displayName || result.user.email || '',
+        action: 'auth.register',
+        actorId: result.user.uid,
+        actorType: 'user',
+        targetType: 'auth',
+        targetId: result.user.uid,
+        status: 'success',
+        severity: 'info',
+        message: `${result.user.displayName || result.user.email || 'User'} registered`,
+        metadata: {
+          email: result.user.email,
+        },
       })
       return result.user
     } catch (e: any) {
@@ -112,10 +126,17 @@ export const useAuth = () => {
       // Log logout activity
       if (currentUser) {
         await logActivity({
-          action: 'logout',
-          entityType: 'auth',
-          userId: currentUser.uid,
-          entityName: currentUser.displayName || currentUser.email || '',
+          action: 'auth.logout',
+          actorId: currentUser.uid,
+          actorType: 'user',
+          targetType: 'auth',
+          targetId: currentUser.uid,
+          status: 'success',
+          severity: 'info',
+          message: `${currentUser.displayName || currentUser.email || 'User'} logged out`,
+          metadata: {
+            email: currentUser.email,
+          },
         })
       }
       user.value = null

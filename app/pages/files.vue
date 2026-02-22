@@ -338,6 +338,6 @@ const handleUploadComplete = () => {
 
 // Fetch files on mount
 onMounted(() => {
-  fetchFiles()
+  fetchFiles('')
 })
 </script>

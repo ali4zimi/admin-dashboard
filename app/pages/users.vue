@@ -191,7 +191,7 @@ useHead({
   title: 'User Management - Admin Panel'
 })
 
-const { users, loading, fetchUsers, searchUsers } = useUsers()
+const { users, loading, fetchUsers, searchUsers, deleteUser } = useUsers()
 
 // Search and filters
 const searchTerm = ref('')

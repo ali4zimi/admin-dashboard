@@ -9,7 +9,7 @@ import {
 } from 'firebase/storage'
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, deleteDoc } from 'firebase/firestore'
 
-  import { useActivityLog } from '~/composables/useActivityLog'
+import { useActivityLog } from '~/composables/useActivityLog'
 export interface FileData {
   id: string
   name: string
@@ -69,9 +69,10 @@ const storageStats = ref({
 export const useFiles = () => {
   const { storage, firestore } = useFirebase()
   const { logActivity } = useActivityLog()
+  const { user } = useAuth ? useAuth() : { user: { value: null } }
 
   // Fetch all files from Firestore (not storage)
-  const fetchFiles = async () => {
+  const fetchFiles = async (p0: string) => {
     if (!firestore) return
 
     loading.value = true
@@ -213,13 +214,21 @@ export const useFiles = () => {
                     updatedAt: serverTimestamp(),
                   })
                   // Log activity in activityLog collection
-                  await addDoc(collection(firestore, 'activityLog'), {
-                    action: 'upload',
-                    fileName: newFile.name,
-                    fileId: newFile.fullPath,
-                    fileType: newFile.type,
-                    fileSize: newFile.size,
-                    timestamp: serverTimestamp(),
+                  await logActivity({
+                    action: 'file.upload',
+                    actorId: user?.value?.uid || '',
+                    actorType: user?.value?.role || 'user',
+                    targetType: 'file',
+                    targetId: newFile.fullPath,
+                    status: 'success',
+                    severity: 'info',
+                    message: `${user?.value?.displayName || user?.value?.email || 'User'} uploaded file "${newFile.name}"`,
+                    changes: { before: null, after: { ...newFile } },
+                    metadata: {
+                      fileName: newFile.name,
+                      fileType: newFile.type,
+                      fileSize: newFile.size,
+                    },
                   })
                 } catch (err) {
                   console.error('Error saving file metadata or activity log to Firestore:', err)
@@ -263,13 +272,21 @@ export const useFiles = () => {
           snapshot.forEach(async (d) => {
             await deleteDoc(doc(firestore, 'files', d.id))
             // Log activity
-            await addDoc(collection(firestore, 'activityLog'), {
-              action: 'delete',
-              fileName: file.name,
-              fileId: file.fullPath,
-              fileType: file.type,
-              fileSize: file.size,
-              timestamp: serverTimestamp(),
+            await logActivity({
+              action: 'file.delete',
+              actorId: user?.value?.uid || '',
+              actorType: user?.value?.role || 'user',
+              targetType: 'file',
+              targetId: file.fullPath,
+              status: 'success',
+              severity: 'info',
+              message: `${user?.value?.displayName || user?.value?.email || 'User'} deleted file "${file.name}"`,
+              changes: { before: file, after: null },
+              metadata: {
+                fileName: file.name,
+                fileType: file.type,
+                fileSize: file.size,
+              },
             })
           })
         } else {
@@ -277,13 +294,21 @@ export const useFiles = () => {
           const { deleteDoc, doc, addDoc, collection, serverTimestamp } = await import('firebase/firestore')
           await deleteDoc(doc(firestore, 'files', docId))
           // Log activity
-          await addDoc(collection(firestore, 'activityLog'), {
-            action: 'delete',
-            fileName: file.name,
-            fileId: file.fullPath,
-            fileType: file.type,
-            fileSize: file.size,
-            timestamp: serverTimestamp(),
+          await logActivity({
+            action: 'file.delete',
+            actorId: user?.value?.uid || '',
+            actorType: user?.value?.role || 'user',
+            targetType: 'file',
+            targetId: file.fullPath,
+            status: 'success',
+            severity: 'info',
+            message: `${user?.value?.displayName || user?.value?.email || 'User'} deleted file "${file.name}"`,
+            changes: { before: file, after: null },
+            metadata: {
+              fileName: file.name,
+              fileType: file.type,
+              fileSize: file.size,
+            },
           })
         }
       } catch (err) {

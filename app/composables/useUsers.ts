@@ -103,10 +103,20 @@ export const useUsers = () => {
       users.value = [newUser, ...users.value]
       // Log activity
       await logActivity({
-        action: 'create',
-        entityType: 'user',
-        entityId: docRef.id,
-        entityName: userData.name,
+        action: 'user.create',
+        actorId: docRef.id,
+        actorType: userData.role || 'user',
+        targetType: 'user',
+        targetId: docRef.id,
+        status: 'success',
+        severity: 'info',
+        message: `User ${userData.name} created`,
+        changes: { before: null, after: { ...newUser } },
+        metadata: {
+          name: userData.name,
+          email: userData.email,
+          role: userData.role,
+        },
       })
       return newUser
     } catch (e: any) {
@@ -136,11 +146,22 @@ export const useUsers = () => {
       )
 
       // Log activity
+      const beforeUser = users.value.find(u => u.id === id)
       await logActivity({
-        action: 'update',
-        entityType: 'user',
-        entityId: id,
-        entityName: userData.name || '',
+        action: 'user.update',
+        actorId: id,
+        actorType: userData.role || beforeUser?.role || 'user',
+        targetType: 'user',
+        targetId: id,
+        status: 'success',
+        severity: 'info',
+        message: `User ${userData.name || beforeUser?.name || ''} updated`,
+        changes: { before: beforeUser, after: { ...beforeUser, ...userData } },
+        metadata: {
+          name: userData.name || beforeUser?.name || '',
+          email: userData.email || beforeUser?.email || '',
+          role: userData.role || beforeUser?.role || '',
+        },
       })
       return { id, ...userData }
     } catch (e: any) {
@@ -163,10 +184,22 @@ export const useUsers = () => {
       await deleteDoc(docRef)
 
       // Log activity
+      const deletedUser = users.value.find(u => u.id === id)
       await logActivity({
-        action: 'delete',
-        entityType: 'user',
-        entityId: id,
+        action: 'user.delete',
+        actorId: id,
+        actorType: deletedUser?.role || 'user',
+        targetType: 'user',
+        targetId: id,
+        status: 'success',
+        severity: 'info',
+        message: `User ${deletedUser?.name || ''} deleted`,
+        changes: { before: deletedUser, after: null },
+        metadata: {
+          name: deletedUser?.name || '',
+          email: deletedUser?.email || '',
+          role: deletedUser?.role || '',
+        },
       })
       users.value = users.value.filter(user => user.id !== id)
       return true

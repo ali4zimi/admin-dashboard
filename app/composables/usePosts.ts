@@ -132,11 +132,19 @@ export const usePosts = () => {
       posts.value = [newPost, ...posts.value]
       // Log activity
       await logActivity({
-        action: 'create',
-        entityType: 'post',
-        entityId: docRef.id,
-        entityName: postData.title,
-        userId: user.value?.uid || '',
+        action: 'post.create',
+        actorId: user.value?.uid || '',
+        actorType: user.value?.role || 'user',
+        targetType: 'post',
+        targetId: docRef.id,
+        status: 'success',
+        severity: 'info',
+        message: `${authorName} created post "${postData.title}"`,
+        changes: { before: null, after: { ...newPost } },
+        metadata: {
+          title: postData.title,
+          author: authorName,
+        },
       })
       return newPost
     } catch (e: any) {
@@ -166,12 +174,24 @@ export const usePosts = () => {
       )
 
       // Log activity
+      const actorId = user.value?.uid || ''
+      const actorType = user.value?.role || 'user'
+      const actorName = user.value?.displayName || user.value?.email || ''
+      const affectedPost = posts.value.find(post => post.id === id)
       await logActivity({
-        action: 'update',
-        entityType: 'post',
-        entityId: id,
-        entityName: postData.title || '',
-        userId: user.value?.uid || '',
+        action: 'post.update',
+        actorId,
+        actorType,
+        targetType: 'post',
+        targetId: id,
+        status: 'success',
+        severity: 'info',
+        message: `${actorName} updated post "${postData.title || affectedPost?.title || ''}"`,
+        changes: { before: affectedPost, after: { ...affectedPost, ...postData } },
+        metadata: {
+          title: postData.title || affectedPost?.title || '',
+          author: affectedPost?.author || '',
+        },
       })
       return { id, ...postData }
     } catch (e: any) {
@@ -194,11 +214,24 @@ export const usePosts = () => {
       await deleteDoc(docRef)
 
       // Log activity
+      const actorIdDel = user.value?.uid || ''
+      const actorTypeDel = user.value?.role || 'user'
+      const actorNameDel = user.value?.displayName || user.value?.email || ''
+      const deletedPost = posts.value.find(post => post.id === id)
       await logActivity({
-        action: 'delete',
-        entityType: 'post',
-        entityId: id,
-        userId: user.value?.uid || '',
+        action: 'post.delete',
+        actorId: actorIdDel,
+        actorType: actorTypeDel,
+        targetType: 'post',
+        targetId: id,
+        status: 'success',
+        severity: 'info',
+        message: `${actorNameDel} deleted post "${deletedPost?.title || ''}"`,
+        changes: { before: deletedPost, after: null },
+        metadata: {
+          title: deletedPost?.title || '',
+          author: deletedPost?.author || '',
+        },
       })
       posts.value = posts.value.filter(post => post.id !== id)
       return true
