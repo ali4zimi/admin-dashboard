@@ -4,138 +4,46 @@
       <h1 class="text-2xl font-bold text-gray-900">Bookings</h1>
       <p class="text-gray-600">View and manage restaurant bookings and events on the calendar.</p>
     </div>
-    <!-- Custom Monthly Calendar -->
-    <div class="rounded-lg bg-white p-6 shadow-sm min-h-[400px]">
-      <div class="flex items-center justify-between mb-4">
-        <button @click="prevMonth" class="px-2 py-1 rounded hover:bg-gray-100">
-          &lt;
-        </button>
-        <h2 class="text-lg font-semibold">{{ monthYearLabel }}</h2>
-        <button @click="nextMonth" class="px-2 py-1 rounded hover:bg-gray-100">
-          &gt;
-        </button>
-      </div>
-      <div class="flex text-center text-gray-500 font-medium">
-        <div v-for="d in weekDays" :key="d" class="flex-1 py-2 border border-gray-300">{{ d }}</div>
-      </div>
-      <div>
-        <div v-for="row in calendarRows" :key="'row-' + row" class="flex">
-          <div
-            v-for="col in 7"
-            :key="'cell-' + ((row-1)*7 + (col-1))"
-            class="flex-1 h-25 cursor-pointer select-none flex items-start justify-end p-2 border border-gray-300 border-t-0"
-            :class="[
-              calendarCells[(row-1)*7 + (col-1)].isToday ? 'bg-orange-100 font-bold' : '',
-              calendarCells[(row-1)*7 + (col-1)].isOtherMonth ? 'text-gray-400 bg-gray-50' : ''
-            ]"
-          >
-            {{ calendarCells[(row-1)*7 + (col-1)].day }}
-          </div>
-        </div>
-      </div>
-    </div>
+    <Calendar
+      :view="calendarView"
+      :month="currentMonth"
+      :year="currentYear"
+      :today="today"
+      :weekStart="weekStart"
+      @update:view="calendarView = $event"
+      @update:month="updateMonth"
+      @update:year="updateYear"
+      @update:weekStart="updateWeekStart"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
+import Calendar from '~/components/Calendar.vue'
 
 const today = new Date()
 const currentMonth = ref(today.getMonth())
 const currentYear = ref(today.getFullYear())
+const calendarView = ref<'month' | 'week'>('month')
+const weekStart = ref(getWeekStart(today))
 
-const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
-
-const daysInMonth = computed(() => {
-  return new Date(currentYear.value, currentMonth.value + 1, 0).getDate()
-})
-
-const firstDayOfWeek = computed(() => {
-  return new Date(currentYear.value, currentMonth.value, 1).getDay()
-})
-
-const calendarRows = computed(() => {
-  // Calculate how many rows are needed (5 or 6)
-  const firstDay = firstDayOfWeek.value
-  const daysThisMonth = daysInMonth.value
-  const totalCellsNeeded = firstDay + daysThisMonth
-  return totalCellsNeeded > 35 ? 6 : 5
-})
-
-const calendarCells = computed(() => {
-  const days: Array<{ day: number; isOtherMonth: boolean; isToday: boolean }> = []
-  const firstDay = firstDayOfWeek.value
-  const daysThisMonth = daysInMonth.value
-  const totalCells = calendarRows.value * 7
-
-  // Previous month
-  const prevMonth = currentMonth.value === 0 ? 11 : currentMonth.value - 1
-  const prevYear = currentMonth.value === 0 ? currentYear.value - 1 : currentYear.value
-  const daysInPrevMonth = new Date(prevYear, prevMonth + 1, 0).getDate()
-
-  // Fill days from previous month
-  for (let i = firstDay - 1; i >= 0; i--) {
-    const day = daysInPrevMonth - i
-    days.push({
-      day,
-      isOtherMonth: true,
-      isToday: false,
-    })
-  }
-
-  // Fill current month days
-  for (let d = 1; d <= daysThisMonth; d++) {
-    days.push({
-      day: d,
-      isOtherMonth: false,
-      isToday: isToday(d),
-    })
-  }
-
-  // Fill next month days
-  let nextDay = 1
-  while (days.length < totalCells) {
-    days.push({
-      day: nextDay++,
-      isOtherMonth: true,
-      isToday: false,
-    })
-  }
-  return days
-})
-
-const monthYearLabel = computed(() => {
-  return new Date(currentYear.value, currentMonth.value).toLocaleString('default', {
-    month: 'long',
-    year: 'numeric',
-  })
-})
-
-function prevMonth() {
-  if (currentMonth.value === 0) {
-    currentMonth.value = 11
-    currentYear.value--
-  } else {
-    currentMonth.value--
-  }
+function getWeekStart(date: Date): Date {
+  const d = new Date(date)
+  const day = d.getDay()
+  d.setDate(d.getDate() - day)
+  d.setHours(0, 0, 0, 0)
+  return d
 }
 
-function nextMonth() {
-  if (currentMonth.value === 11) {
-    currentMonth.value = 0
-    currentYear.value++
-  } else {
-    currentMonth.value++
-  }
+function updateMonth(newMonth: number) {
+  currentMonth.value = newMonth
 }
-
-function isToday(day) {
-  return (
-    day === today.getDate() &&
-    currentMonth.value === today.getMonth() &&
-    currentYear.value === today.getFullYear()
-  )
+function updateYear(newYear: number) {
+  currentYear.value = newYear
+}
+function updateWeekStart(newWeekStart: number | Date) {
+  weekStart.value = new Date(newWeekStart)
 }
 </script>
 
