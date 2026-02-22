@@ -67,6 +67,20 @@
               File Management
             </NuxtLink>
           </li>
+          <li>
+            <NuxtLink
+              to="/bookings"
+              class="flex items-center rounded-lg px-4 py-3 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+              active-class="bg-gray-800 text-white"
+              @click="closeSidebarOnMobile"
+            >
+              <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="3" y="8" width="18" height="13" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              Bookings
+            </NuxtLink>
+          </li>
         </ul>
       </nav>
     </aside>
