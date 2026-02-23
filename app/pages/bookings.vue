@@ -20,12 +20,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import Calendar from '~/components/Calendar.vue'
+import Calendar from '~/components/calendar/Calendar.vue'
 
 const today = new Date()
 const currentMonth = ref(today.getMonth())
 const currentYear = ref(today.getFullYear())
-const calendarView = ref<'month' | 'week'>('month')
+const calendarView = ref<'month' | 'week'>('week')
 const weekStart = ref(getWeekStart(today))
 
 function getWeekStart(date: Date): Date {
