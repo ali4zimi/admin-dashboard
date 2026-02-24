@@ -25,7 +25,6 @@ interface CalendarEvent {
   date: Date;
   time: string;
   duration: string;
-  [key: string]: any;
 }
 const props = defineProps<{ show: boolean; event: CalendarEvent; eventEndTime: (time: string, duration: string) => string }>()
 const emit = defineEmits(['close', 'edit', 'delete', 'duplicate'])

@@ -13,7 +13,7 @@
       <template v-if="eventsForCell(dayObj, hour).length">
         <div
           v-for="(ev, idx) in eventsForCell(dayObj, hour)"
-          :key="'event-' + ev.title + '-' + idx + '-' + dragUpdateKey"
+          :key="'event-' + ev.id"
           class="absolute flex flex-col mb-1 border border-blue-500"
           :style="{
             left: `${idx * 50}px`,
@@ -28,7 +28,7 @@
             boxShadow: '0 2px 8px rgba(37,99,235,0.15)',
             top: `${parseInt(ev.time.split(':')[1] || '0', 10) * (40 / 60)}px`,
           }"
-          @mousedown="onEventDragStart($event, ev, dayObj, hour, $event)"
+          @mousedown="onEventDragStartWrapper($event, ev, dayObj, hour, $event)"
           @click="handleEventClick(ev)"
         >
           <div class="font-bold">{{ ev.title }}</div>
@@ -58,8 +58,27 @@ const props = defineProps<{
   dragUpdateKey: number,
   onEventDragStart: (...args: any[]) => void
 }>()
-const emit = defineEmits(['event-click']);
+const emit = defineEmits(['event-click', 'event-drag-end']);
 function handleEventClick(ev: CalendarEvent) {
   emit('event-click', ev);
+}
+
+// Drag event emit logic
+let lastDraggedEvent: CalendarEvent | null = null;
+function onEventDragStartWrapper(...args: any[]) {
+  // args: ($event, ev, dayObj, hour, $event)
+  const ev = args[1] as CalendarEvent;
+  lastDraggedEvent = ev;
+  props.onEventDragStart(...args);
+  document.addEventListener('mouseup', onEventDragEndWrapper, { once: true });
+}
+
+function onEventDragEndWrapper(e: MouseEvent) {
+  if (lastDraggedEvent) {
+    // Deep clone to avoid mutation issues
+    const eventCopy = JSON.parse(JSON.stringify(lastDraggedEvent));
+    emit('event-drag-end', eventCopy);
+    lastDraggedEvent = null;
+  }
 }
 </script>

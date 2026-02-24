@@ -22,7 +22,9 @@
         :event-end-time="eventEndTime"
         :drag-update-key="dragUpdateKey"
         :on-event-drag-start="onEventDragStart"
+        :on-event-drag-end="onEventDragEnd"
         @event-click="handleEventClick"
+        @event-drag-end="handleEventDragEnd"
       />
       <!-- Dialogs moved to Calendar.vue -->
     </div>
@@ -164,9 +166,13 @@ function onEventDrag(e) {
 }
 
 function onEventDragEnd() {
-  draggingEvent.value = null
   document.removeEventListener('mousemove', onEventDrag)
   document.removeEventListener('mouseup', onEventDragEnd)
+  handleEventDragEnd(draggingEvent.value)
+}
+
+function handleEventDragEnd(eventObj: CalendarEvent) {
+  emit('event-change', eventObj);
 }
 
 // Dialog state moved to Calendar.vue
