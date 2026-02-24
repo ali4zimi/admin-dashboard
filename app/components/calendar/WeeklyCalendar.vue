@@ -22,23 +22,31 @@
         :event-end-time="eventEndTime"
         :drag-update-key="dragUpdateKey"
         :on-event-drag-start="onEventDragStart"
-        :on-event-click="onEventClick"
+        @event-click="handleEventClick"
       />
-      <CalendarEventDialog
-        :show="dialogShow"
-        :event="dialogEvent"
-        :event-end-time="eventEndTime"
-        @close="onDialogClose"
-      />
+      <!-- Dialogs moved to Calendar.vue -->
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+// TypeScript interface for calendar events
+interface CalendarEvent {
+  id: string;
+  title: string;
+  date: Date;
+  time: string;
+  duration: string;
+  [key: string]: any;
+}
+
+function handleEventClick(ev: CalendarEvent) {
+  emit('event-click', ev);
+}
 import { computed, ref } from 'vue'
 import CalendarTimeGrid from './CalendarTimeGrid.vue'
 import CalendarDayColumn from './CalendarDayColumn.vue'
-import CalendarEventDialog from './CalendarEventDialog.vue'
+// Dialogs moved to Calendar.vue
 const props = defineProps({
   weekStart: { type: [Date, String, Number], required: true },
   month: { type: Number, required: true },
@@ -161,15 +169,6 @@ function onEventDragEnd() {
   document.removeEventListener('mouseup', onEventDragEnd)
 }
 
-const dialogShow = ref(false)
-const dialogEvent = ref(null)
-
-function onEventClick(ev) {
-  dialogEvent.value = ev
-  dialogShow.value = true
-}
-function onDialogClose() {
-  dialogShow.value = false
-  dialogEvent.value = null
-}
+// Dialog state moved to Calendar.vue
+const emit = defineEmits(['event-click', 'dialog-close', 'edit-event', 'edit-dialog-close', 'event-change']);
 </script>

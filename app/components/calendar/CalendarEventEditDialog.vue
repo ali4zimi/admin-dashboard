@@ -32,10 +32,15 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-const props = defineProps({
-  show: { type: Boolean, required: true },
-  event: { type: Object, required: true },
-})
+interface CalendarEvent {
+  id: string;
+  title: string;
+  date: Date;
+  time: string;
+  duration: string;
+  [key: string]: any;
+}
+const props = defineProps<{ show: boolean; event: CalendarEvent }>()
 const emit = defineEmits(['close', 'save'])
 const form = ref({
   title: '',
@@ -46,7 +51,7 @@ const form = ref({
 watch(() => props.event, (ev) => {
   if (ev) {
     form.value.title = ev.title || ''
-    form.value.date = ev.date ? ev.date.toISOString().slice(0,10) : ''
+    form.value.date = ev.date ? (typeof ev.date === 'string' ? ev.date : ev.date.toISOString().slice(0,10)) : ''
     form.value.time = ev.time || ''
     form.value.duration = ev.duration || ''
   }
@@ -57,6 +62,7 @@ function close() {
 function save() {
   emit('save', {
     ...props.event,
+    id: props.event.id, // always emit the id
     title: form.value.title,
     date: new Date(form.value.date),
     time: form.value.time,

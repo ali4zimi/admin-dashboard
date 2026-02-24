@@ -18,11 +18,15 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps({
-  show: { type: Boolean, required: true },
-  event: { type: Object, required: true },
-  eventEndTime: { type: Function, required: true },
-})
+interface CalendarEvent {
+  id: string;
+  title: string;
+  date: Date;
+  time: string;
+  duration: string;
+  [key: string]: any;
+}
+const props = defineProps<{ show: boolean; event: CalendarEvent; eventEndTime: (time: string, duration: string) => string }>()
 const emit = defineEmits(['close', 'edit', 'delete', 'duplicate'])
 function close() {
   emit('close')

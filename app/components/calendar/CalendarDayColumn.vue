@@ -29,7 +29,7 @@
             top: `${parseInt(ev.time.split(':')[1] || '0', 10) * (40 / 60)}px`,
           }"
           @mousedown="onEventDragStart($event, ev, dayObj, hour, $event)"
-          @click="props.onEventClick(ev)"
+          @click="handleEventClick(ev)"
         >
           <div class="font-bold">{{ ev.title }}</div>
           <div class="text-xs text-slate-200">{{ ev.time }} - {{ eventEndTime(ev.time, ev.duration) }}</div>
@@ -40,13 +40,26 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps({
-  dayObj: { type: Object, required: true },
-  eventsForCell: { type: Function, required: true },
-  parseDurationToHours: { type: Function, required: true },
-  eventEndTime: { type: Function, required: true },
-  dragUpdateKey: { type: Number, required: true },
-  onEventDragStart: { type: Function, required: true },
-  onEventClick: { type: Function, required: true }
-})
+// TypeScript interface for calendar events
+interface CalendarEvent {
+  id: string;
+  title: string;
+  date: Date;
+  time: string;
+  duration: string;
+  [key: string]: any;
+}
+
+const props = defineProps<{
+  dayObj: Record<string, any>,
+  eventsForCell: (dayObj: any, hour: number) => CalendarEvent[],
+  parseDurationToHours: (duration: string) => number,
+  eventEndTime: (time: string, duration: string) => string,
+  dragUpdateKey: number,
+  onEventDragStart: (...args: any[]) => void
+}>()
+const emit = defineEmits(['event-click']);
+function handleEventClick(ev: CalendarEvent) {
+  emit('event-click', ev);
+}
 </script>

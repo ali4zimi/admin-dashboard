@@ -7,6 +7,15 @@
 </template>
 
 <script setup lang="ts">
+// TypeScript interface for calendar events (for consistency)
+interface CalendarEvent {
+  id: string;
+  title: string;
+  date: Date;
+  time: string;
+  duration: string;
+  [key: string]: any;
+}
 const props = defineProps({
   hours: { type: Number, default: 24 }
 })
