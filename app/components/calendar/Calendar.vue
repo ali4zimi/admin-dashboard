@@ -36,8 +36,9 @@
       :event-end-time="eventEndTime"
       @close="onDialogClose"
       @edit="onEditEvent"
+      @delete="onDeleteEvent"
+      @duplicate="onDuplicateEvent"
     />
-
   </div>
 </template>
 
@@ -97,6 +98,30 @@ function onEventDialogSave(event: CalendarEvent) {
   }
   eventDialogShow.value = false;
   eventDialogEvent.value = null;
+}
+
+// Delete event handler
+function onDeleteEvent(ev: CalendarEvent) {
+  // Remove the event from dummyEvents
+  const index = dummyEvents.value.findIndex(e => e.id === ev.id);
+  if (index !== -1) {
+    dummyEvents.value.splice(index, 1);
+  }
+  dialogShow.value = false;
+  dialogEvent.value = null;
+}
+
+// Duplicate event handler
+function onDuplicateEvent(ev: CalendarEvent) {
+  // Create a copy with a new id and (optionally) adjust the date/time
+  const newEvent = {
+    ...ev,
+    id: generateId(),
+    // Optionally, you can adjust the date/time here if you want
+  };
+  dummyEvents.value.push(newEvent);
+  dialogShow.value = false;
+  dialogEvent.value = null;
 }
 
 // Example dummyEvents with unique IDs (replace with your real data source)
