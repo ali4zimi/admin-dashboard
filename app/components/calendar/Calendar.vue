@@ -3,7 +3,16 @@
     <div class="mb-4 flex gap-2">
       <button @click="$emit('update:view', 'month')" :class="['px-4 py-2 rounded', view === 'month' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700']">Month View</button>
       <button @click="$emit('update:view', 'week')" :class="['px-4 py-2 rounded', view === 'week' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700']">Week View</button>
+      <button @click="onNewEventClick" class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 ml-auto">New Event</button>
     </div>
+    <EventDialog
+      v-if="eventDialogShow"
+      :show="eventDialogShow"
+      :mode="eventDialogMode"
+      :event="eventDialogEvent"
+      @close="onEventDialogClose"
+      @save="onEventDialogSave"
+    />
     <MonthlyCalendar v-if="view === 'month'" :month="month" :year="year" :today="today" :events="dummyEvents" @prev="onPrevMonth" @next="onNextMonth" @event-change="onEventChange" />
     <WeeklyCalendar
       v-else
@@ -28,23 +37,17 @@
       @close="onDialogClose"
       @edit="onEditEvent"
     />
-    <CalendarEventEditDialog
-      v-if="editDialogShow && editDialogEvent"
-      :show="editDialogShow"
-      :event="editDialogEvent"
-      @close="onEditDialogClose"
-      @save="onEditDialogSave"
-    />
+
   </div>
 </template>
 
 <script setup lang="ts">
 
 import { ref } from 'vue';
+import EventDialog from './CalendarEventDialog.vue';
 import MonthlyCalendar from './MonthlyCalendar.vue';
 import WeeklyCalendar from './WeeklyCalendar.vue';
-import CalendarEventDialog from './CalendarEventDialog.vue';
-import CalendarEventEditDialog from './CalendarEventEditDialog.vue';
+import CalendarEventDialog from './EventDetailsDialog.vue';
 
 // TypeScript interface for calendar events
 interface CalendarEvent {
@@ -65,8 +68,36 @@ function generateId() {
 
 const dialogShow = ref(false);
 const dialogEvent = ref<CalendarEvent | null>(null);
-const editDialogShow = ref(false);
-const editDialogEvent = ref<CalendarEvent | null>(null);
+const eventDialogShow = ref(false);
+const eventDialogMode = ref<'create' | 'edit'>('create');
+const eventDialogEvent = ref<CalendarEvent | null>(null);
+
+function onNewEventClick() {
+  eventDialogMode.value = 'create';
+  eventDialogEvent.value = null;
+  eventDialogShow.value = true;
+}
+
+function onEventDialogClose() {
+  eventDialogShow.value = false;
+  eventDialogEvent.value = null;
+}
+
+function onEventDialogSave(event: CalendarEvent) {
+  if (eventDialogMode.value === 'edit') {
+    // Edit existing event
+    const index = dummyEvents.value.findIndex(ev => ev.id === event.id);
+    if (index !== -1) dummyEvents.value[index] = { ...event };
+  } else {
+    // Create new event
+    dummyEvents.value.push({
+      ...event,
+      date: event.date instanceof Date ? event.date : new Date(event.date),
+    });
+  }
+  eventDialogShow.value = false;
+  eventDialogEvent.value = null;
+}
 
 // Example dummyEvents with unique IDs (replace with your real data source)
 const dummyEvents = ref<CalendarEvent[]>([
@@ -117,8 +148,9 @@ function onDialogClose() {
 
 function onEditEvent(ev: CalendarEvent) {
   dialogShow.value = false;
-  editDialogEvent.value = { ...ev };
-  editDialogShow.value = true;
+  eventDialogMode.value = 'edit';
+  eventDialogEvent.value = { ...ev };
+  eventDialogShow.value = true;
 }
 
 function onEditDialogClose() {
@@ -146,7 +178,7 @@ const props = defineProps({
   month: { type: Number, required: true },
   year: { type: Number, required: true },
   today: { type: Object, required: true },
-  weekStart: { type: Object, required: false },
+  weekStart: { type: [Date, String, Number], required: false },
 })
 const emit = defineEmits(['update:view', 'update:month', 'update:year', 'update:weekStart', 'event-change'])
 
@@ -159,9 +191,15 @@ function onNextMonth() {
   if (props.month === 11) emit('update:year', props.year + 1)
 }
 function onPrevWeek() {
-  emit('update:weekStart', new Date(props.weekStart).setDate(props.weekStart.getDate() - 7))
+  if (!props.weekStart) return;
+  const date = new Date(props.weekStart as any);
+  date.setDate(date.getDate() - 7);
+  emit('update:weekStart', date);
 }
 function onNextWeek() {
-  emit('update:weekStart', new Date(props.weekStart).setDate(props.weekStart.getDate() + 7))
+  if (!props.weekStart) return;
+  const date = new Date(props.weekStart as any);
+  date.setDate(date.getDate() + 7);
+  emit('update:weekStart', date);
 }
 </script>

@@ -26,28 +26,20 @@
         </div>
       </div>
     </div>
-    <CalendarEventDialog
-      v-if="dialogShow && dialogEvent"
-      :show="dialogShow"
-      :event="dialogEvent"
-      :event-end-time="(time, duration) => { /* fallback for month view */ return time }"
-      @close="onDialogClose"
-      @edit="onEditEvent"
-    />
-    <CalendarEventEditDialog
-      v-if="editDialogShow && editDialogEvent"
-      :show="editDialogShow"
-      :event="editDialogEvent"
-      @close="onEditDialogClose"
-      @save="onEditDialogSave"
+    <EventDialog
+      v-if="eventDialogShow"
+      :show="eventDialogShow"
+      :mode="eventDialogMode"
+      :event="eventDialogEvent"
+      @close="onEventDialogClose"
+      @save="onEventDialogSave"
     />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, getCurrentInstance } from 'vue'
-import CalendarEventDialog from './CalendarEventDialog.vue'
-import CalendarEventEditDialog from './CalendarEventEditDialog.vue'
+import EventDialog from './CalendarEventDialog.vue'
 const props = defineProps({
   month: { type: Number, required: true },
   year: { type: Number, required: true },
@@ -57,32 +49,23 @@ const props = defineProps({
 
 const draggingEvent = ref<CalendarEvent | null>(null)
 const instance = getCurrentInstance()
-const dialogShow = ref(false)
-const dialogEvent = ref<CalendarEvent | null>(null)
-const editDialogShow = ref(false)
-const editDialogEvent = ref<CalendarEvent | null>(null)
+const eventDialogShow = ref(false)
+const eventDialogMode = ref<'edit' | 'create'>('edit')
+const eventDialogEvent = ref<CalendarEvent | null>(null)
 
 function onEventClick(ev: CalendarEvent) {
-  dialogEvent.value = ev
-  dialogShow.value = true
+  eventDialogMode.value = 'edit'
+  eventDialogEvent.value = { ...ev }
+  eventDialogShow.value = true
 }
-function onDialogClose() {
-  dialogShow.value = false
-  dialogEvent.value = null
+function onEventDialogClose() {
+  eventDialogShow.value = false
+  eventDialogEvent.value = null
 }
-function onEditEvent(ev: CalendarEvent) {
-  dialogShow.value = false
-  editDialogEvent.value = { ...ev };
-  editDialogShow.value = true;
-}
-function onEditDialogClose() {
-  editDialogShow.value = false;
-  editDialogEvent.value = null;
-}
-function onEditDialogSave(editedEvent: CalendarEvent) {
+function onEventDialogSave(editedEvent: CalendarEvent) {
   // Emit event change to parent (Calendar) using id for identification
-  instance?.emit('event-change', editedEvent);
-  onEditDialogClose();
+  instance?.emit('event-change', editedEvent)
+  onEventDialogClose()
 }
 function onEventDragStart(ev, eventObj) {
   draggingEvent.value = eventObj
