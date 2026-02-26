@@ -51,6 +51,31 @@
           <option>Archived</option>
         </select>
       </div>
+      <div class="flex items-center gap-2">
+        <button
+          :class="[
+            'rounded-lg p-2 transition-colors',
+            viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:bg-gray-100'
+          ]"
+          @click="viewMode = 'grid'"
+        >
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+          </svg>
+        </button>
+        <button
+          :class="[
+            'rounded-lg p-2 transition-colors',
+            viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:bg-gray-100'
+          ]"
+          @click="viewMode = 'list'"
+        >
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+
     </div>
 
     <!-- Loading state -->
@@ -81,10 +106,10 @@
       </button>
     </div>
 
-    <!-- Posts grid -->
-    <div v-else class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <!-- Posts grid view -->
+    <div v-if="viewMode === 'grid'" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       <div
-        v-for="post in posts"
+        v-for="post in filteredPosts"
         :key="post.id"
         class="overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md"
       >
@@ -139,6 +164,49 @@
       </div>
     </div>
 
+    <!-- Posts list view -->
+    <div v-else class="overflow-hidden rounded-lg bg-white shadow-sm">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Title</th>
+            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Category</th>
+            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
+            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Author</th>
+            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Date</th>
+            <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white">
+          <tr v-for="post in filteredPosts" :key="post.id" class="hover:bg-gray-50">
+            <td class="whitespace-nowrap px-6 py-4">
+              <span class="text-sm font-medium text-gray-900">{{ post.title }}</span>
+            </td>
+            <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ post.category }}</td>
+            <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ post.status }}</td>
+            <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ post.author }}</td>
+            <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ formatDate(post.date) }}</td>
+            <td class="whitespace-nowrap px-6 py-4 text-right text-sm">
+              <div class="flex justify-end space-x-2">
+                <button
+                  class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-blue-600"
+                  @click="openEditModal(post)"
+                >
+                  Edit
+                </button>
+                <button
+                  class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-600"
+                  @click="openDeleteModal(post)"
+                >
+                  Delete
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <!-- Results info -->
     <div v-if="posts.length > 0" class="mt-6 text-center">
       <p class="text-sm text-gray-500">Showing {{ posts.length }} posts</p>
@@ -176,6 +244,9 @@ const searchTerm = ref('')
 const filterCategory = ref('All Categories')
 const filterStatus = ref('All Status')
 
+// View mode
+const viewMode = ref<'grid' | 'list'>('grid')
+
 // Modal states
 const showPostModal = ref(false)
 const showDeleteModal = ref(false)
@@ -194,6 +265,12 @@ const debouncedSearch = () => {
 const handleSearch = () => {
   searchPosts(searchTerm.value, filterCategory.value, filterStatus.value)
 }
+
+// Filtered posts based on search and filters
+const filteredPosts = computed(() => {
+  // posts is reactive, so just return it
+  return posts.value
+})
 
 // Modal handlers
 const openAddModal = () => {
