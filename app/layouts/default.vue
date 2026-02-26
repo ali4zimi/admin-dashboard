@@ -67,6 +67,22 @@
               File Management
             </NuxtLink>
           </li>
+          <li class="border-t border-gray-700 pt-4">
+            <span class="px-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Restaurant</span>
+          </li>
+          <li>
+            <NuxtLink
+              to="/menu"
+              class="flex items-center rounded-lg px-4 py-3 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+              active-class="bg-gray-800 text-white"
+              @click="closeSidebarOnMobile"
+            >
+              <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              Menu
+            </NuxtLink>
+          </li>
         </ul>
       </nav>
     </aside>
