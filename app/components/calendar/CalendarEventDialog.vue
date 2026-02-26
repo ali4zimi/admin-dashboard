@@ -52,10 +52,22 @@ const props = defineProps<{
 }>();
 const emit = defineEmits(['close', 'save']);
 
+
+function getDefaultDate() {
+  const now = new Date();
+  return now.toISOString().slice(0, 10);
+}
+
+function getDefaultTime() {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() + 30);
+  return now.toTimeString().slice(0, 5);
+}
+
 const form = ref({
   title: '',
-  date: '',
-  time: '',
+  date: getDefaultDate(),
+  time: getDefaultTime(),
   duration: '01:00',
 });
 
@@ -73,19 +85,15 @@ watch(
         form.value.time = event.time || '';
         form.value.duration = event.duration || '';
       } else {
-        form.value.title = '';
-        form.value.date = '';
-        form.value.time = '';
+        form.value.title = 'New event';
+        form.value.date = getDefaultDate();
+        form.value.time = getDefaultTime();
         form.value.duration = '01:00';
       }
     }
   },
   { immediate: true }
 );
-
-function close() {
-  emit('close');
-}
 
 function save() {
   if (!form.value.title || !form.value.date || !form.value.time || !form.value.duration) return;
