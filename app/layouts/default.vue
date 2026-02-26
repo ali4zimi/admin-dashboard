@@ -116,13 +116,17 @@
               @click="userMenuOpen = !userMenuOpen"
             >
               <div class="h-8 w-8 overflow-hidden rounded-full bg-gray-300">
-                <img
-                  :src="userAvatar"
-                  alt="User avatar"
-                  class="h-full w-full object-cover"
-                />
+                <ClientOnly>
+                  <img
+                    :src="userAvatar"
+                    alt="User avatar"
+                    class="h-full w-full object-cover"
+                  />
+                </ClientOnly>
               </div>
-              <span class="hidden text-sm font-medium text-gray-700 md:block">{{ userName }}</span>
+              <ClientOnly>
+                <span class="hidden text-sm font-medium text-gray-700 md:block">{{ userName }}</span>
+              </ClientOnly>
               <svg class="hidden h-4 w-4 text-gray-400 md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
               </svg>
