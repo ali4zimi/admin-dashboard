@@ -152,6 +152,7 @@
         v-for="file in filteredFiles"
         :key="file.id"
         class="group cursor-pointer overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md"
+        @click="openFileViewer(file)"
       >
         <!-- Image preview or icon -->
         <div
@@ -175,13 +176,13 @@
           <div class="mt-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             <button
               class="flex-1 rounded bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100"
-              @click="downloadFile(file)"
+              @click.stop="downloadFile(file)"
             >
               Download
             </button>
             <button
               class="rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-100"
-              @click="openDeleteModal(file)"
+              @click.stop="openDeleteModal(file)"
             >
               Delete
             </button>
@@ -203,7 +204,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 bg-white">
-          <tr v-for="file in filteredFiles" :key="file.id" class="hover:bg-gray-50">
+          <tr v-for="file in filteredFiles" :key="file.id" class="hover:bg-gray-50" @click="openFileViewer(file)" style="cursor: pointer;">
             <td class="whitespace-nowrap px-6 py-4">
               <div class="flex items-center">
                 <div class="flex h-10 w-10 items-center justify-center rounded-lg" :class="getFileBgColor(file.type)">
@@ -224,7 +225,7 @@
               <div class="flex justify-end space-x-2">
                 <button
                   class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-blue-600"
-                  @click="downloadFile(file)"
+                  @click.stop="downloadFile(file)"
                 >
                   <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -232,7 +233,7 @@
                 </button>
                 <button
                   class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-600"
-                  @click="openDeleteModal(file)"
+                  @click.stop="openDeleteModal(file)"
                 >
                   <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -254,6 +255,13 @@
     <FileUploadModal
       v-model="showUploadModal"
       @uploaded="handleUploadComplete"
+    />
+
+    <!-- File Viewer Modal -->
+    <FileViewerModal
+      v-model="showFileViewer"
+      :file="fileToView || undefined"
+      @download="downloadFile"
     />
 
     <!-- Delete Confirmation Modal -->
@@ -330,6 +338,15 @@ const handleFileDeleted = async () => {
     await deleteFile(fileToDelete.value)
   }
   fileToDelete.value = null
+}
+
+const showFileViewer = ref(false)
+const fileToView = ref<FileData | null>(null)
+
+const openFileViewer = (file: FileData) => {
+  console.log('Opening file viewer for:', file)
+  fileToView.value = file
+  showFileViewer.value = true
 }
 
 const handleUploadComplete = () => {
