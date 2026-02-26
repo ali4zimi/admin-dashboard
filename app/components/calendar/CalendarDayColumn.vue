@@ -59,7 +59,15 @@ const props = defineProps<{
   onEventDragStart: (...args: any[]) => void
 }>()
 const emit = defineEmits(['event-click', 'event-drag-end']);
+
+
+let dragJustEnded = false;
+let dragStartPos: { x: number; y: number } | null = null;
 function handleEventClick(ev: CalendarEvent) {
+  if (dragJustEnded) {
+    dragJustEnded = false;
+    return;
+  }
   emit('event-click', ev);
 }
 
@@ -68,17 +76,27 @@ let lastDraggedEvent: CalendarEvent | null = null;
 function onEventDragStartWrapper(...args: any[]) {
   // args: ($event, ev, dayObj, hour, $event)
   const ev = args[1] as CalendarEvent;
+  const mouseEvent = args[0] as MouseEvent;
   lastDraggedEvent = ev;
+  dragJustEnded = false;
+  dragStartPos = { x: mouseEvent.clientX, y: mouseEvent.clientY };
   props.onEventDragStart(...args);
   document.addEventListener('mouseup', onEventDragEndWrapper, { once: true });
 }
 
 function onEventDragEndWrapper(e: MouseEvent) {
   if (lastDraggedEvent) {
+    // Only suppress click if mouse moved (dragged)
+    const moved = dragStartPos && (Math.abs(e.clientX - dragStartPos.x) > 2 || Math.abs(e.clientY - dragStartPos.y) > 2);
+    if (moved) {
+      dragJustEnded = true;
+      setTimeout(() => { dragJustEnded = false; }, 0);
+    }
     // Deep clone to avoid mutation issues
     const eventCopy = JSON.parse(JSON.stringify(lastDraggedEvent));
     emit('event-drag-end', eventCopy);
     lastDraggedEvent = null;
+    dragStartPos = null;
   }
 }
 </script>
