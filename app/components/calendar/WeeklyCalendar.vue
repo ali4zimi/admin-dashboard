@@ -9,7 +9,7 @@
         <div class="flex flex-col w-12"></div>
       <div v-for="d in weekDays" :key="d" class="flex-1 py-2 border border-r-0 last:border-r border-gray-300">{{ d }}</div>
     </div>
-    <div class="flex">
+    <div class="flex" ref="calendarContainerRef">
       <!-- Hour labels -->
       <CalendarTimeGrid :hours="24" />
       <!-- Day columns -->
@@ -124,22 +124,32 @@ function eventsForCell(dayObj: { dateStr: string }, hour: number) {
 // Track drag state
 const draggingEvent = ref<any>(null)
 const dragOffsetY = ref(0)
+const dragOffsetX = ref(0)
 const dragStartHour = ref(0)
 const dragStartMinute = ref(0)
 const dragDayObj = ref<any>(null)
+const dragStartDayIndex = ref(0)
 const dragUpdateKey = ref(0) // force reactivity
+const columnRefs = ref<HTMLElement[]>([])
+const calendarContainerRef = ref<HTMLElement | null>(null)
 
-function onEventDragStart(ev, eventObj, dayObj, hour, e) {
+function onEventDragStart(ev: MouseEvent, eventObj: CalendarEvent, dayObj: any, hour: number, e: MouseEvent) {
   draggingEvent.value = eventObj
   dragDayObj.value = dayObj
   dragStartHour.value = hour - 1 // fix: hour label offset
   dragStartMinute.value = parseInt(eventObj.time.split(':')[1] || '0', 10)
   dragOffsetY.value = e.clientY
+  dragOffsetX.value = e.clientX
+  
+  // Find the starting day index
+  const startDayIndex = weekDaysData.value.findIndex(d => d.dateStr === dayObj.dateStr)
+  dragStartDayIndex.value = startDayIndex >= 0 ? startDayIndex : 0
+  
   document.addEventListener('mousemove', onEventDrag)
   document.addEventListener('mouseup', onEventDragEnd)
 }
 
-function onEventDrag(e) {
+function onEventDrag(e: MouseEvent) {
   if (!draggingEvent.value) return
   const cellHeight = 40
   const deltaY = e.clientY - dragOffsetY.value
@@ -162,6 +172,30 @@ function onEventDrag(e) {
   }
   // Update event time (simulate move)
   draggingEvent.value.time = `${newHour.toString().padStart(2, '0')}:${newMinute.toString().padStart(2, '0')}`
+  
+  // Calculate horizontal movement to determine new day column
+  const container = calendarContainerRef.value
+  if (container) {
+    const containerRect = container.getBoundingClientRect()
+    const timeGridWidth = 48 // w-12 = 3rem = 48px
+    const columnsStartX = containerRect.left + timeGridWidth
+    const columnsWidth = containerRect.width - timeGridWidth
+    const columnWidth = columnsWidth / 7
+    
+    // Calculate which column the mouse is over
+    const relativeX = e.clientX - columnsStartX
+    let newDayIndex = Math.floor(relativeX / columnWidth)
+    newDayIndex = Math.max(0, Math.min(6, newDayIndex))
+    
+    // Update the event's date if the day changed
+    const newDayData = weekDaysData.value[newDayIndex]
+    if (newDayData) {
+      const newDate = new Date(newDayData.dateStr)
+      newDate.setHours(12, 0, 0, 0) // Set to noon to avoid timezone issues
+      draggingEvent.value.date = newDate
+    }
+  }
+  
   dragUpdateKey.value++ // force reactivity
 }
 
