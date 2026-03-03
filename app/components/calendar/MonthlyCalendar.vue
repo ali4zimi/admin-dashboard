@@ -131,12 +131,12 @@ function getCellForEvent(ev: CalendarEvent): number {
 
 function getDisplayEventsForCell(cellIndex: number): CalendarEvent[] {
   const cell = calendarCells.value[cellIndex]
-  if (!cell || cell.isOtherMonth) return []
+  if (!cell) return []
   
   return localEvents.value
     .filter(ev => {
-      return ev.date.getFullYear() === props.year &&
-        ev.date.getMonth() === props.month &&
+      return ev.date.getFullYear() === cell.year &&
+        ev.date.getMonth() === cell.month &&
         ev.date.getDate() === cell.day
     })
     .sort((a, b) => {
@@ -203,7 +203,7 @@ function onMouseMove(e: MouseEvent) {
   if (foundCellIndex < 0) return
   
   const targetCell = calendarCells.value[foundCellIndex]
-  if (!targetCell || targetCell.isOtherMonth) return
+  if (!targetCell) return
   
   // Check if cell or position changed
   const cellChanged = foundCellIndex !== dropTargetCellIndex.value
@@ -218,7 +218,7 @@ function onMouseMove(e: MouseEvent) {
     if (!draggingEvent) return
     
     // Calculate new date for target cell
-    const newDate = new Date(props.year, props.month, targetCell.day)
+    const newDate = new Date(targetCell.year, targetCell.month, targetCell.day)
     newDate.setHours(12, 0, 0, 0)
     
     // Update dragging event's date
@@ -228,8 +228,8 @@ function onMouseMove(e: MouseEvent) {
     const targetCellEvents = localEvents.value
       .filter(ev => 
         ev.id !== draggingEventId.value &&
-        ev.date.getFullYear() === props.year &&
-        ev.date.getMonth() === props.month &&
+        ev.date.getFullYear() === targetCell.year &&
+        ev.date.getMonth() === targetCell.month &&
         ev.date.getDate() === targetCell.day
       )
       .sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'))
@@ -318,27 +318,35 @@ const calendarRows = computed(() => {
   return totalCellsNeeded > 35 ? 6 : 5
 })
 const calendarCells = computed(() => {
-  const days: Array<{ day: number; isOtherMonth: boolean; isToday: boolean }> = []
+  const days: Array<{ day: number; month: number; year: number; isOtherMonth: boolean; isToday: boolean }> = []
   const firstDay = firstDayOfWeek.value
   const daysThisMonth = daysInMonth.value
   const totalCells = calendarRows.value * 7
   const prevMonth = props.month === 0 ? 11 : props.month - 1
   const prevYear = props.month === 0 ? props.year - 1 : props.year
+  const nextMonth = props.month === 11 ? 0 : props.month + 1
+  const nextYear = props.month === 11 ? props.year + 1 : props.year
   const daysInPrevMonth = new Date(prevYear, prevMonth + 1, 0).getDate()
+  
+  // Previous month days
   for (let i = firstDay - 1; i >= 0; i--) {
     const day = daysInPrevMonth - i
-    days.push({ day, isOtherMonth: true, isToday: false })
+    days.push({ day, month: prevMonth, year: prevYear, isOtherMonth: true, isToday: false })
   }
+  // Current month days
   for (let d = 1; d <= daysThisMonth; d++) {
     days.push({
       day: d,
+      month: props.month,
+      year: props.year,
       isOtherMonth: false,
       isToday: d === props.today.getDate() && props.month === props.today.getMonth() && props.year === props.today.getFullYear(),
     })
   }
+  // Next month days
   let nextDay = 1
   while (days.length < totalCells) {
-    days.push({ day: nextDay++, isOtherMonth: true, isToday: false })
+    days.push({ day: nextDay++, month: nextMonth, year: nextYear, isOtherMonth: true, isToday: false })
   }
   return days
 })
