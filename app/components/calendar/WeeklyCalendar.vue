@@ -58,14 +58,16 @@ const props = defineProps({
 })
 const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const weekDaysData = computed(() => {
-  const arr: Array<{ day: number; dateStr: string; isOtherMonth: boolean; isToday: boolean }> = []
+  const arr: Array<{ day: number; month: number; year: number; dateStr: string; isOtherMonth: boolean; isToday: boolean }> = []
   const start = new Date(props.weekStart instanceof Date ? props.weekStart : new Date(props.weekStart))
   for (let i = 0; i < 7; i++) {
     const d = new Date(start)
     d.setDate(start.getDate() + i)
     arr.push({
       day: d.getDate(),
-      dateStr: d.toISOString().slice(0, 10),
+      month: d.getMonth(),
+      year: d.getFullYear(),
+      dateStr: `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`,
       isOtherMonth: d.getMonth() !== props.month || d.getFullYear() !== props.year,
       isToday: d.getDate() === (props.today instanceof Date ? props.today.getDate() : new Date(props.today).getDate())
         && d.getMonth() === (props.today instanceof Date ? props.today.getMonth() : new Date(props.today).getMonth())
@@ -78,12 +80,14 @@ const weekLabel = computed(() => {
   const start = weekDaysData.value[0]
   const end = weekDaysData.value[6]
   if (!start || !end) return ''
-  return `${new Date(start.dateStr).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })} - ${new Date(end.dateStr).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}`
+  const startDate = new Date(start.year, start.month, start.day)
+  const endDate = new Date(end.year, end.month, end.day)
+  return `${startDate.toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })} - ${endDate.toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}`
 })
 
 function parseTimeToHour(time?: string) {
   const t = typeof time === 'string' ? time : '00:00';
-  return parseInt(t.split(':')[0], 10);
+  return parseInt(t.split(':')[0] || '0', 10);
 }
 function parseDurationToHours(duration: string | undefined) {
   if (!duration) return 1;
@@ -105,15 +109,14 @@ function eventEndTime(start: string | undefined, duration: string | undefined) {
   return `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
 }
 
-function eventsForCell(dayObj: { dateStr: string }, hour: number) {
+function eventsForCell(dayObj: { day: number; month: number; year: number; dateStr: string }, hour: number): CalendarEvent[] {
   // Find all events starting at this day and hour
-  return props.events.filter(ev => {
+  return (props.events as CalendarEvent[]).filter(ev => {
     const evDate = ev.date
-    const cellDate = new Date(dayObj.dateStr)
     if (
-      evDate.getFullYear() === cellDate.getFullYear() &&
-      evDate.getMonth() === cellDate.getMonth() &&
-      evDate.getDate() === cellDate.getDate()
+      evDate.getFullYear() === dayObj.year &&
+      evDate.getMonth() === dayObj.month &&
+      evDate.getDate() === dayObj.day
     ) {
       const [evHour] = ev.time.split(":").map(Number)
       return evHour === (hour - 1);
@@ -190,8 +193,7 @@ function onEventDrag(e: MouseEvent) {
     // Update the event's date if the day changed
     const newDayData = weekDaysData.value[newDayIndex]
     if (newDayData) {
-      const newDate = new Date(newDayData.dateStr)
-      newDate.setHours(12, 0, 0, 0) // Set to noon to avoid timezone issues
+      const newDate = new Date(newDayData.year, newDayData.month, newDayData.day, 12, 0, 0, 0)
       draggingEvent.value.date = newDate
     }
   }
@@ -210,5 +212,5 @@ function handleEventDragEnd(eventObj: CalendarEvent) {
 }
 
 // Dialog state moved to Calendar.vue
-const emit = defineEmits(['event-click', 'dialog-close', 'edit-event', 'edit-dialog-close', 'event-change']);
+const emit = defineEmits(['prev', 'next', 'event-click', 'dialog-close', 'edit-event', 'edit-dialog-close', 'event-change']);
 </script>
