@@ -3,6 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
+
   app: {
     head: {
       meta: [
@@ -10,13 +11,16 @@ export default defineNuxtConfig({
       ],
     },
   },
+
   devtools: { enabled: true },
   css: ['@/assets/css/main.css'],
+
   vite: {
     plugins: [
       tailwindcss(),
     ],
   },
+
   runtimeConfig: {
     public: {
       firebaseApiKey: process.env.FIREBASE_API_KEY || '',
@@ -27,4 +31,9 @@ export default defineNuxtConfig({
       firebaseAppId: process.env.FIREBASE_APP_ID || '',
     },
   },
+
+  modules: [
+    '@pinia/nuxt',
+    '@pinia/nuxt',
+  ],
 })
