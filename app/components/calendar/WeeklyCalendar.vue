@@ -1,0 +1,216 @@
+<template>
+  <div class="rounded-lg bg-white p-6 shadow-sm min-h-[400px]">
+    <div class="flex items-center justify-between mb-4">
+      <button @click="$emit('prev')" class="px-2 py-1 rounded hover:bg-gray-100">&lt;</button>
+      <h2 class="text-lg font-semibold">Week of {{ weekLabel }}</h2>
+      <button @click="$emit('next')" class="px-2 py-1 rounded hover:bg-gray-100">&gt;</button>
+    </div>
+    <div class="flex text-center text-gray-500 font-medium">
+        <div class="flex flex-col w-12"></div>
+      <div v-for="d in weekDays" :key="d" class="flex-1 py-2 border border-r-0 last:border-r border-gray-300">{{ d }}</div>
+    </div>
+    <div class="flex" ref="calendarContainerRef">
+      <!-- Hour labels -->
+      <CalendarTimeGrid :hours="24" />
+      <!-- Day columns -->
+      <CalendarDayColumn
+        v-for="dayObj in weekDaysData"
+        :key="'week-day-' + dayObj.dateStr"
+        :day-obj="dayObj"
+        :events-for-cell="eventsForCell"
+        :parse-duration-to-hours="parseDurationToHours"
+        :event-end-time="eventEndTime"
+        :drag-update-key="dragUpdateKey"
+        :on-event-drag-start="onEventDragStart"
+        :on-event-drag-end="onEventDragEnd"
+        @event-click="handleEventClick"
+        @event-drag-end="handleEventDragEnd"
+      />
+      <!-- Dialogs moved to Calendar.vue -->
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+// TypeScript interface for calendar events
+interface CalendarEvent {
+  id: string;
+  title: string;
+  date: Date;
+  time: string;
+  duration: string;
+  [key: string]: any;
+}
+
+function handleEventClick(ev: CalendarEvent) {
+  emit('event-click', ev);
+}
+import { computed, ref } from 'vue'
+import CalendarTimeGrid from './CalendarTimeGrid.vue'
+import CalendarDayColumn from './CalendarDayColumn.vue'
+// Dialogs moved to Calendar.vue
+const props = defineProps({
+  weekStart: { type: [Date, String, Number], required: true },
+  month: { type: Number, required: true },
+  year: { type: Number, required: true },
+  today: { type: [Date, String, Number], required: true },
+  events: { type: Array, required: true },
+})
+const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const weekDaysData = computed(() => {
+  const arr: Array<{ day: number; month: number; year: number; dateStr: string; isOtherMonth: boolean; isToday: boolean }> = []
+  const start = new Date(props.weekStart instanceof Date ? props.weekStart : new Date(props.weekStart))
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start)
+    d.setDate(start.getDate() + i)
+    arr.push({
+      day: d.getDate(),
+      month: d.getMonth(),
+      year: d.getFullYear(),
+      dateStr: `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`,
+      isOtherMonth: d.getMonth() !== props.month || d.getFullYear() !== props.year,
+      isToday: d.getDate() === (props.today instanceof Date ? props.today.getDate() : new Date(props.today).getDate())
+        && d.getMonth() === (props.today instanceof Date ? props.today.getMonth() : new Date(props.today).getMonth())
+        && d.getFullYear() === (props.today instanceof Date ? props.today.getFullYear() : new Date(props.today).getFullYear()),
+    })
+  }
+  return arr
+})
+const weekLabel = computed(() => {
+  const start = weekDaysData.value[0]
+  const end = weekDaysData.value[6]
+  if (!start || !end) return ''
+  const startDate = new Date(start.year, start.month, start.day)
+  const endDate = new Date(end.year, end.month, end.day)
+  return `${startDate.toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })} - ${endDate.toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}`
+})
+
+function parseTimeToHour(time?: string) {
+  const t = typeof time === 'string' ? time : '00:00';
+  return parseInt(t.split(':')[0] || '0', 10);
+}
+function parseDurationToHours(duration: string | undefined) {
+  if (!duration) return 1;
+  const [h, m] = duration.split(':').map(Number);
+  return (h || 0) + (m ? m / 60 : 0);
+}
+
+
+function eventEndTime(start: string | undefined, duration: string | undefined) {
+  if (!start) return '';
+  const [h, m] = start.split(':').map(Number);
+  const dur = parseDurationToHours(duration);
+  let endHour = (h || 0) + Math.floor(dur);
+  let endMin = (m || 0) + Math.round((dur % 1) * 60);
+  if (endMin >= 60) {
+    endHour += 1;
+    endMin -= 60;
+  }
+  return `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
+}
+
+function eventsForCell(dayObj: { day: number; month: number; year: number; dateStr: string }, hour: number): CalendarEvent[] {
+  // Find all events starting at this day and hour
+  return (props.events as CalendarEvent[]).filter(ev => {
+    const evDate = ev.date
+    if (
+      evDate.getFullYear() === dayObj.year &&
+      evDate.getMonth() === dayObj.month &&
+      evDate.getDate() === dayObj.day
+    ) {
+      const [evHour] = ev.time.split(":").map(Number)
+      return evHour === (hour - 1);
+    }
+    return false
+  })
+}
+// Track drag state
+const draggingEvent = ref<any>(null)
+const dragOffsetY = ref(0)
+const dragOffsetX = ref(0)
+const dragStartHour = ref(0)
+const dragStartMinute = ref(0)
+const dragDayObj = ref<any>(null)
+const dragStartDayIndex = ref(0)
+const dragUpdateKey = ref(0) // force reactivity
+const columnRefs = ref<HTMLElement[]>([])
+const calendarContainerRef = ref<HTMLElement | null>(null)
+
+function onEventDragStart(ev: MouseEvent, eventObj: CalendarEvent, dayObj: any, hour: number, e: MouseEvent) {
+  draggingEvent.value = eventObj
+  dragDayObj.value = dayObj
+  dragStartHour.value = hour - 1 // fix: hour label offset
+  dragStartMinute.value = parseInt(eventObj.time.split(':')[1] || '0', 10)
+  dragOffsetY.value = e.clientY
+  dragOffsetX.value = e.clientX
+  
+  // Find the starting day index
+  const startDayIndex = weekDaysData.value.findIndex(d => d.dateStr === dayObj.dateStr)
+  dragStartDayIndex.value = startDayIndex >= 0 ? startDayIndex : 0
+  
+  document.addEventListener('mousemove', onEventDrag)
+  document.addEventListener('mouseup', onEventDragEnd)
+}
+
+function onEventDrag(e: MouseEvent) {
+  if (!draggingEvent.value) return
+  const cellHeight = 40
+  const deltaY = e.clientY - dragOffsetY.value
+  // Snap to 10px = 15min (cellHeight/4)
+  const quarter = Math.round(deltaY / (cellHeight / 4))
+  let totalMinutes = dragStartHour.value * 60 + dragStartMinute.value + quarter * 15
+  if (totalMinutes < 0) totalMinutes = 0
+  if (totalMinutes > 23 * 60 + 45) totalMinutes = 23 * 60 + 45
+  let newHour = Math.floor(totalMinutes / 60)
+  let newMinute = totalMinutes % 60
+  // Snap to nearest quarter
+  newMinute = Math.round(newMinute / 15) * 15
+  if (newMinute === 60) {
+    newHour += 1
+    newMinute = 0
+  }
+  if (newHour > 23) {
+    newHour = 23
+    newMinute = 45
+  }
+  // Update event time (simulate move)
+  draggingEvent.value.time = `${newHour.toString().padStart(2, '0')}:${newMinute.toString().padStart(2, '0')}`
+  
+  // Calculate horizontal movement to determine new day column
+  const container = calendarContainerRef.value
+  if (container) {
+    const containerRect = container.getBoundingClientRect()
+    const timeGridWidth = 48 // w-12 = 3rem = 48px
+    const columnsStartX = containerRect.left + timeGridWidth
+    const columnsWidth = containerRect.width - timeGridWidth
+    const columnWidth = columnsWidth / 7
+    
+    // Calculate which column the mouse is over
+    const relativeX = e.clientX - columnsStartX
+    let newDayIndex = Math.floor(relativeX / columnWidth)
+    newDayIndex = Math.max(0, Math.min(6, newDayIndex))
+    
+    // Update the event's date if the day changed
+    const newDayData = weekDaysData.value[newDayIndex]
+    if (newDayData) {
+      const newDate = new Date(newDayData.year, newDayData.month, newDayData.day, 12, 0, 0, 0)
+      draggingEvent.value.date = newDate
+    }
+  }
+  
+  dragUpdateKey.value++ // force reactivity
+}
+
+function onEventDragEnd() {
+  document.removeEventListener('mousemove', onEventDrag)
+  document.removeEventListener('mouseup', onEventDragEnd)
+  handleEventDragEnd(draggingEvent.value)
+}
+
+function handleEventDragEnd(eventObj: CalendarEvent) {
+  emit('event-change', eventObj);
+}
+
+// Dialog state moved to Calendar.vue
+const emit = defineEmits(['prev', 'next', 'event-click', 'dialog-close', 'edit-event', 'edit-dialog-close', 'event-change']);
+</script>
