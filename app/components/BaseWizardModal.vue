@@ -7,8 +7,7 @@
       >
         <!-- Backdrop -->
         <div
-          class="fixed inset-0 transition-opacity"
-          style="background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(2px);"
+          class="fixed inset-0 bg-black/80 transition-opacity"
           @click="handleBackdropClick"
         ></div>
 
