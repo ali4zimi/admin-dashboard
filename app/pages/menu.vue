@@ -283,24 +283,24 @@ const openEditModal = (item: any) => {
 const handleItemDeleted = async () => {
   if (itemToDelete.value) {
     await deleteMenuItem(itemToDelete.value.id)
-    await fetchMenuItems()
+    // No need to fetch - store updates local cache automatically
   }
   itemToDelete.value = null
 }
 const handleItemCreated = async () => {
-  await fetchMenuItems()
+  // No need to fetch - store updates local cache automatically
 }
 const handleItemUpdated = async () => {
-  await fetchMenuItems()
+  // No need to fetch - store updates local cache automatically
 }
 const handleCategoryCreated = async () => {
-  await fetchMenuCategories()
+  // No need to fetch - store updates local cache automatically
 }
 const handleCategoryUpdated = async () => {
-  await fetchMenuCategories()
+  // No need to fetch - store updates local cache automatically
 }
 const handleCategoryDeleted = async () => {
-  await fetchMenuCategories()
+  // No need to fetch - store updates local cache automatically
 }
 onMounted(async () => {
   await fetchMenuCategories()

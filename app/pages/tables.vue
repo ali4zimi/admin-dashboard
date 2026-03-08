@@ -184,12 +184,12 @@ const openAddModal = () => {
 const handleTableDeleted = async () => {
   if (tableToDelete.value) {
     await deleteTable(tableToDelete.value.id)
-    await fetchTables()
+    // No need to fetch - store updates local cache automatically
   }
   tableToDelete.value = null
 }
 const handleTableCreated = async () => {
-  await fetchTables()
+  // No need to fetch - store updates local cache automatically
 }
 onMounted(async () => {
   await fetchTables()
