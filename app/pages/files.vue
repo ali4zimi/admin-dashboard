@@ -276,7 +276,7 @@
 </template>
 
 <script setup lang="ts">
-import type { FileData } from '~/composables/useFiles'
+import type { FileData } from '~/types/file.types'
 
 useHead({
   title: 'File Management - Admin Panel'
