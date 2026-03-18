@@ -231,7 +231,7 @@
 </template>
 
 <script setup lang="ts">
-import type { PostData } from '~/composables/usePosts'
+import type { PostData } from '~/types/post.types'
 
 useHead({
   title: 'Posts - Admin Panel'

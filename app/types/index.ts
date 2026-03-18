@@ -2,3 +2,4 @@
 export * from './table.types'
 export * from './menu.types'
 export * from './user.types'
+export * from './post.types'
