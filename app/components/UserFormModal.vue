@@ -84,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import type { UserData } from '~/composables/useUsers'
+import type { UserData } from '~/types/user.types'
 
 interface Props {
   modelValue: boolean
