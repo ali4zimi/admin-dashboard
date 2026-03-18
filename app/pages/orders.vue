@@ -120,7 +120,7 @@
     <DeleteConfirmModal
       v-model="showDeleteModal"
       :item-id="orderToDelete?.id || null"
-      :item-name="orderToDelete?.tableId || ''"
+      :item-name="orderToDelete?.table?.name || ''"
       item-type="Order"
       @confirm="handleOrderDeleted"
     />
@@ -155,7 +155,7 @@ const filteredOrders = computed(() => {
   if (searchTerm.value) {
     const lowerTerm = searchTerm.value.toLowerCase()
     items = items.filter(order =>
-      order.tableId.toLowerCase().includes(lowerTerm)
+      (order.table?.name || '').toLowerCase().includes(lowerTerm)
     )
   }
   if (filterStatus.value) {
