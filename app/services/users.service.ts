@@ -15,12 +15,24 @@ import {
   deleteDoc,
   query,
   orderBy,
+  where,
+  limit,
   serverTimestamp,
 } from 'firebase/firestore'
 import { getFirestore } from './firebase'
-import type { UserData, CreateUserData, UpdateUserData } from '~/types/user.types'
+import type { UserData, UserRole, CreateUserData, UpdateUserData } from '~/types/user.types'
 
 const COLLECTION_NAME = 'users'
+
+const normalizeRole = (role: unknown): UserRole => {
+  return String(role).toLowerCase() === 'admin' ? 'admin' : 'user'
+}
+
+const mapUserDoc = (id: string, data: Record<string, any>): UserData => ({
+  id,
+  ...data,
+  role: normalizeRole(data.role),
+}) as UserData
 
 /**
  * Fetch all users ordered by creation date
@@ -31,10 +43,7 @@ export const fetchAllUsers = async (): Promise<UserData[]> => {
   const q = query(usersRef, orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
 
-  return snapshot.docs.map((docItem) => ({
-    id: docItem.id,
-    ...docItem.data(),
-  })) as UserData[]
+  return snapshot.docs.map((docItem) => mapUserDoc(docItem.id, docItem.data()))
 }
 
 /**
@@ -46,10 +55,46 @@ export const fetchUserById = async (id: string): Promise<UserData | null> => {
   const docSnap = await getDoc(docRef)
 
   if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() } as UserData
+    return mapUserDoc(docSnap.id, docSnap.data() as Record<string, any>)
   }
 
   return null
+}
+
+/**
+ * Fetch one user by Firebase Auth UID.
+ */
+export const fetchUserByUid = async (uid: string): Promise<UserData | null> => {
+  const firestore = getFirestore()
+  const usersRef = collection(firestore, COLLECTION_NAME)
+  const q = query(usersRef, where('uid', '==', uid), limit(1))
+  const snapshot = await getDocs(q)
+
+  if (snapshot.empty) {
+    return null
+  }
+
+  const found = snapshot.docs[0]!
+
+  return mapUserDoc(found.id, found.data())
+}
+
+/**
+ * Fetch one user by email.
+ */
+export const fetchUserByEmail = async (email: string): Promise<UserData | null> => {
+  const firestore = getFirestore()
+  const usersRef = collection(firestore, COLLECTION_NAME)
+  const q = query(usersRef, where('email', '==', email), limit(1))
+  const snapshot = await getDocs(q)
+
+  if (snapshot.empty) {
+    return null
+  }
+
+  const found = snapshot.docs[0]!
+
+  return mapUserDoc(found.id, found.data())
 }
 
 /**
@@ -62,6 +107,7 @@ export const createUser = async (userData: CreateUserData): Promise<UserData> =>
 
   const newUserData = {
     ...userData,
+    role: normalizeRole(userData.role),
     joined: serverTimestamp(),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -72,6 +118,7 @@ export const createUser = async (userData: CreateUserData): Promise<UserData> =>
   return {
     id: docRef.id,
     ...userData,
+    role: normalizeRole(userData.role),
     joined: new Date(),
   }
 }
@@ -85,6 +132,7 @@ export const updateUser = async (id: string, userData: UpdateUserData): Promise<
 
   await updateDoc(docRef, {
     ...userData,
+    ...(userData.role ? { role: normalizeRole(userData.role) } : {}),
     updatedAt: serverTimestamp(),
   })
 }

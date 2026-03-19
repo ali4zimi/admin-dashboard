@@ -4,7 +4,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return
   }
 
-  const { user, initAuth, loading } = useAuth()
+  const { user, currentUserProfile, initAuth, loading, logout } = useAuth()
 
   // Initialize auth if not already done
   if (loading.value) {
@@ -21,6 +21,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // Redirect to login if not authenticated
   if (!user.value) {
+    return navigateTo('/login')
+  }
+
+  // Active users only
+  if (currentUserProfile.value && currentUserProfile.value.status !== 'active') {
+    await logout()
     return navigateTo('/login')
   }
 })

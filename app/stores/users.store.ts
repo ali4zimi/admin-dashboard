@@ -73,6 +73,13 @@ export const useUsersStore = defineStore('users', {
   },
 
   actions: {
+    ensureAdmin() {
+      const { isAdmin } = useAuth()
+      if (!isAdmin.value) {
+        throw new Error('Only admins can manage users')
+      }
+    },
+
     async fetchUsers(forceRefresh = false) {
       if (!forceRefresh && this.isCacheValid && this.users.length > 0) {
         return this.users
@@ -110,6 +117,8 @@ export const useUsersStore = defineStore('users', {
     },
 
     async createUser(userData: CreateUserData) {
+      this.ensureAdmin()
+
       const { user } = useAuth()
       const { logActivity } = useActivityLog()
       const actorUser = user.value as any
@@ -149,7 +158,10 @@ export const useUsersStore = defineStore('users', {
     },
 
     async updateUser(id: string, userData: UpdateUserData) {
+      this.ensureAdmin()
+
       const { user } = useAuth()
+      const { currentUserProfile } = useAuth()
       const { logActivity } = useActivityLog()
       const actorUser = user.value as any
 
@@ -158,6 +170,17 @@ export const useUsersStore = defineStore('users', {
 
       try {
         const beforeUser = this.users.find((u) => u.id === id)
+
+        if (
+          beforeUser?.id &&
+          currentUserProfile.value?.id === beforeUser.id &&
+          (
+            userData.role === 'user' ||
+            userData.status === 'Inactive'
+          )
+        ) {
+          throw new Error('Admins cannot demote or deactivate themselves')
+        }
 
         await UsersService.updateUser(id, userData)
 
@@ -194,7 +217,10 @@ export const useUsersStore = defineStore('users', {
     },
 
     async deleteUser(id: string) {
+      this.ensureAdmin()
+
       const { user } = useAuth()
+      const { currentUserProfile } = useAuth()
       const { logActivity } = useActivityLog()
       const actorUser = user.value as any
 
@@ -203,6 +229,10 @@ export const useUsersStore = defineStore('users', {
 
       try {
         const deletedUser = this.users.find((u) => u.id === id)
+
+        if (currentUserProfile.value?.id === id) {
+          throw new Error('Admins cannot delete themselves')
+        }
 
         await UsersService.deleteUser(id)
 

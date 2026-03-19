@@ -1,7 +1,7 @@
 import type { Timestamp } from 'firebase/firestore'
 
-export type UserRole = 'Admin' | 'Editor' | 'User'
-export type UserStatus = 'Active' | 'Inactive'
+export type UserRole = 'admin' | 'user'
+export type UserStatus = 'active' | 'inactive'
 
 export interface UserData {
   id?: string

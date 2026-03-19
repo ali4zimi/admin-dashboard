@@ -37,9 +37,8 @@
             required
             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
-            <option value="User">User</option>
-            <option value="Editor">Editor</option>
-            <option value="Admin">Admin</option>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
           </select>
         </div>
 
@@ -101,6 +100,7 @@ const emit = defineEmits<{
 }>()
 
 const { createUser, updateUser } = useUsers()
+const { isAdmin } = useAuth()
 
 const loading = ref(false)
 
@@ -114,7 +114,7 @@ const isEditing = computed(() => !!props.user?.id)
 const form = ref({
   name: '',
   email: '',
-  role: 'User' as 'Admin' | 'Editor' | 'User',
+  role: 'user' as 'admin' | 'user',
   status: 'Active' as 'Active' | 'Inactive',
 })
 
@@ -133,7 +133,7 @@ watch(
       form.value = {
         name: '',
         email: '',
-        role: 'User',
+        role: 'user',
         status: 'Active',
       }
     }
@@ -142,6 +142,10 @@ watch(
 )
 
 const handleSubmit = async () => {
+  if (!isAdmin.value) {
+    return
+  }
+
   loading.value = true
 
   try {

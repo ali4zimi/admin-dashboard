@@ -7,6 +7,7 @@
         <p class="text-gray-600">Manage and monitor user accounts.</p>
       </div>
       <button
+        v-if="isAdmin"
         class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
         @click="openAddModal"
       >
@@ -34,10 +35,9 @@
           class="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           @change="handleSearch"
         >
-          <option>All Roles</option>
-          <option>Admin</option>
-          <option>Editor</option>
-          <option>User</option>
+          <option value="All Roles">All Roles</option>
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
         </select>
         <select
           v-model="filterStatus"
@@ -112,19 +112,18 @@
                 <span
                   :class="[
                     'inline-flex rounded-full px-2 py-1 text-xs font-semibold',
-                    user.role === 'Admin' ? 'bg-purple-100 text-purple-800' :
-                    user.role === 'Editor' ? 'bg-blue-100 text-blue-800' :
+                    user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
                     'bg-gray-100 text-gray-800'
                   ]"
                 >
-                  {{ user.role }}
+                  {{ user.role === 'admin' ? 'Admin' : 'User' }}
                 </span>
               </td>
               <td class="whitespace-nowrap px-6 py-4">
                 <span
                   :class="[
                     'inline-flex rounded-full px-2 py-1 text-xs font-semibold',
-                    user.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                   ]"
                 >
                   {{ user.status }}
@@ -134,6 +133,7 @@
               <td class="whitespace-nowrap px-6 py-4 text-right text-sm">
                 <div class="flex justify-end space-x-2">
                   <button
+                    v-if="isAdmin"
                     class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-green-600"
                     title="Edit user"
                     @click="openEditModal(user)"
@@ -143,6 +143,7 @@
                     </svg>
                   </button>
                   <button
+                    v-if="isAdmin && user.id !== currentUserProfile?.id"
                     class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-600"
                     title="Delete user"
                     @click="openDeleteModal(user)"
@@ -192,6 +193,7 @@ useHead({
 })
 
 const { users, loading, fetchUsers, searchUsers, deleteUser } = useUsers()
+const { isAdmin, currentUserProfile } = useAuth()
 
 // Search and filters
 const searchTerm = ref('')
@@ -219,16 +221,19 @@ const handleSearch = () => {
 
 // Modal handlers
 const openAddModal = () => {
+  if (!isAdmin.value) return
   selectedUser.value = null
   showUserModal.value = true
 }
 
 const openEditModal = (user: UserData) => {
+  if (!isAdmin.value) return
   selectedUser.value = user
   showUserModal.value = true
 }
 
 const openDeleteModal = (user: UserData) => {
+  if (!isAdmin.value || currentUserProfile.value?.id === user.id) return
   userToDelete.value = user
   showDeleteModal.value = true
 }
