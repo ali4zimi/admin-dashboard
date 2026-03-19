@@ -97,9 +97,15 @@
             </td>
             <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ reservation.customerName }}</td>
             <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                <span v-if="reservation.tableIds && reservation.tableIds.length > 0" class="inline-flex items-center rounded px-2 py-0.5 font-semibold bg-blue-100 text-blue-800">
-                    {{ reservation.tableIds.join(', ') }}
-                </span>
+                <div v-if="reservation.tableIds && reservation.tableIds.length > 0" class="flex flex-wrap gap-1">
+                  <span
+                    v-for="tableName in getReservationTableNames(reservation.tableIds)"
+                    :key="`${reservation.id}-${tableName}`"
+                    class="inline-flex items-center rounded px-2 py-0.5 font-semibold bg-blue-100 text-blue-800"
+                  >
+                    {{ tableName }}
+                  </span>
+                </div>
                 <span v-else class="text-gray-400 italic">No table assigned</span>
             </td>
             <td class="whitespace-nowrap px-6 py-4 text-right text-sm">
@@ -152,6 +158,7 @@
 
 <script setup lang="ts">
 import { useReservations } from '~/composables/restaurant/useReservations'
+import { useTables } from '~/composables/restaurant/useTables'
 import DeleteConfirmModal from '~/components/DeleteConfirmModal.vue'
 import ReservationFormModal from '~/components/ReservationFormModal.vue'
 
@@ -165,6 +172,11 @@ const {
   fetchReservations,
   deleteReservation,
 } = useReservations()
+
+const {
+  tables,
+  fetchTables,
+} = useTables()
 
 const searchTerm = ref('')
 const filterStatus = ref('')
@@ -187,6 +199,20 @@ const filteredReservations = computed(() => {
   }
   return items
 })
+
+const tableNameById = computed(() => {
+  return tables.value.reduce((acc, table) => {
+    if (table.id) {
+      acc[table.id] = table.name
+    }
+    return acc
+  }, {} as Record<string, string>)
+})
+
+const getReservationTableNames = (tableIds: string[] = []) => {
+  return tableIds
+    .map((tableId) => tableNameById.value[tableId] || tableId)
+}
 
 const formatDate = (date: any) => {
   if (!date) return ''
@@ -223,6 +249,6 @@ const handleReservationCreated = async () => {
   await fetchReservations()
 }
 onMounted(async () => {
-  await fetchReservations()
+  await Promise.all([fetchReservations(), fetchTables()])
 })
 </script>

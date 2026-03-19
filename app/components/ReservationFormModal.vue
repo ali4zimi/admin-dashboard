@@ -63,13 +63,25 @@
 
         <div>
           <label class="mb-1 block text-sm font-medium text-gray-700">Table(s)</label>
-          <input
+          <select
             v-model="form.tableIds"
-            type="text"
-            placeholder="e.g., T1, T2 (comma separated)"
+            multiple
             class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-          <p class="mt-1 text-xs text-gray-500">Enter table IDs separated by commas</p>
+          >
+            <option
+              v-for="table in availableTableOptions"
+              :key="table.id"
+              :value="table.id"
+            >
+              {{ table.name }} ({{ table.capacity }} seats){{ table.status !== 'available' ? ` - ${table.status}` : '' }}
+            </option>
+          </select>
+          <p class="mt-1 text-xs text-gray-500">
+            Select one or more available tables. Hold Ctrl/Cmd for multiple selection.
+          </p>
+          <p v-if="availableTableOptions.length === 0" class="mt-1 text-xs text-amber-600">
+            No available tables found.
+          </p>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -163,7 +175,9 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useReservations } from '~/composables/restaurant/useReservations'
+import { useTablesStore } from '~/stores/tables.store'
 import BaseWizardModal from './BaseWizardModal.vue'
 import type { WizardStep } from './BaseWizardModal.vue'
 
@@ -171,6 +185,8 @@ const props = defineProps<{ modelValue: boolean, reservation?: any }>()
 const emit = defineEmits(['update:modelValue', 'saved'])
 
 const { createReservation, updateReservation } = useReservations()
+const tablesStore = useTablesStore()
+const { tables } = storeToRefs(tablesStore)
 
 const loading = ref(false)
 const currentStep = ref(0)
@@ -187,6 +203,34 @@ const isOpen = computed({
 })
 
 const isEditing = computed(() => !!props.reservation?.id)
+
+const availableTableOptions = computed(() => {
+  const selectedTableIds = new Set(form.value.tableIds)
+
+  return tables.value
+    .filter((table) => table.id && (table.status === 'available' || selectedTableIds.has(table.id)))
+    .map((table) => ({
+      id: table.id as string,
+      name: table.name,
+      capacity: table.capacity,
+      status: table.status,
+    }))
+})
+
+const normalizeTableIds = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value.map((id) => String(id).trim()).filter(Boolean)
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    return value
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean)
+  }
+
+  return []
+}
 
 // Validation for each step
 const canProceedToNextStep = computed(() => {
@@ -209,7 +253,7 @@ const form = ref({
   customerName: '',
   phone: '',
   partySize: 1,
-  tableIds: '' as string,
+  tableIds: [] as string[],
   startTime: '',
   endTime: '',
   status: 'pending',
@@ -220,19 +264,20 @@ const form = ref({
 
 watch(
   () => [props.modelValue, props.reservation],
-  () => {
+  async () => {
+    if (props.modelValue) {
+      await tablesStore.fetchTables()
+    }
+
     if (props.modelValue && props.reservation) {
       // Reset to first step when opening for edit
       currentStep.value = 0
-      // Handle tableIds - convert array to comma-separated string for display
-      const tableIdsValue = props.reservation.tableIds
-      const tableIdsString = Array.isArray(tableIdsValue) ? tableIdsValue.join(', ') : (tableIdsValue || '')
       
       form.value = {
         customerName: props.reservation.customerName,
         phone: props.reservation.phone || '',
         partySize: props.reservation.partySize || 1,
-        tableIds: tableIdsString,
+        tableIds: normalizeTableIds(props.reservation.tableIds),
         startTime: props.reservation.startTime || '',
         endTime: props.reservation.endTime || '',
         status: props.reservation.status || 'pending',
@@ -247,7 +292,7 @@ watch(
         customerName: '',
         phone: '',
         partySize: 1,
-        tableIds: '',
+        tableIds: [],
         startTime: '',
         endTime: '',
         status: 'pending',
@@ -263,14 +308,9 @@ watch(
 const handleSubmit = async () => {
   loading.value = true
   try {
-    // Prepare data - convert tableIds string to array
-    const tableIdsArray = form.value.tableIds
-      ? form.value.tableIds.split(',').map((id: string) => id.trim()).filter(Boolean)
-      : []
-    
     const reservationData = {
       ...form.value,
-      tableIds: tableIdsArray,
+      tableIds: [...form.value.tableIds],
     }
     
     if (isEditing.value && props.reservation?.id) {
