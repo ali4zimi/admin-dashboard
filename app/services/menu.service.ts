@@ -17,6 +17,7 @@ import {
   query,
   orderBy,
   serverTimestamp,
+  writeBatch,
 } from 'firebase/firestore'
 import { getFirestore } from './firebase'
 import type { 
@@ -413,4 +414,39 @@ export const deleteMenuCategory = async (id: string): Promise<void> => {
     deleteDoc(doc(firestore, MENU_COLLECTION, id)),
     deleteDoc(doc(firestore, LEGACY_CATEGORIES_COLLECTION, id)),
   ])
+}
+
+/**
+ * Batch-update the order field for multiple categories
+ */
+export const updateMenuCategoryOrders = async (
+  orders: Array<{ id: string; order: number }>
+): Promise<void> => {
+  const firestore = getFirestore()
+  const batch = writeBatch(firestore)
+
+  for (const { id, order } of orders) {
+    const docRef = doc(firestore, MENU_COLLECTION, id)
+    batch.update(docRef, { order, updatedAt: serverTimestamp() })
+  }
+
+  await batch.commit()
+}
+
+/**
+ * Batch-update the order field for multiple items within a category
+ */
+export const updateMenuItemOrders = async (
+  categoryId: string,
+  orders: Array<{ id: string; order: number }>
+): Promise<void> => {
+  const firestore = getFirestore()
+  const batch = writeBatch(firestore)
+
+  for (const { id, order } of orders) {
+    const docRef = doc(firestore, MENU_COLLECTION, categoryId, ITEMS_SUBCOLLECTION, id)
+    batch.update(docRef, { order, updatedAt: serverTimestamp() })
+  }
+
+  await batch.commit()
 }

@@ -50,6 +50,8 @@ export const useMenu = () => {
     createMenuCategory: (data: CreateMenuCategoryData) => store.createMenuCategory(data),
     updateMenuCategory: (id: string, data: UpdateMenuCategoryData) => store.updateMenuCategory(id, data),
     deleteMenuCategory: (id: string) => store.deleteMenuCategory(id),
+    reorderMenuCategories: (orderedIds: string[]) => store.reorderMenuCategories(orderedIds),
+    reorderMenuItems: (categoryId: string, orderedIds: string[]) => store.reorderMenuItems(categoryId, orderedIds),
     
     // Cache management
     invalidateItemsCache: () => store.invalidateItemsCache(),

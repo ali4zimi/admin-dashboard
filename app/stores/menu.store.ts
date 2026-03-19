@@ -372,6 +372,50 @@ export const useMenuStore = defineStore('menu', {
       }
     },
 
+    // ==================== Reorder Categories ====================
+
+    async reorderMenuCategories(orderedIds: string[]) {
+      const previousCategories = [...this.menuCategories]
+
+      // Optimistic update
+      const orders = orderedIds.map((id, index) => ({ id, order: index }))
+      this.menuCategories = this.menuCategories.map(cat => ({
+        ...cat,
+        order: orders.find(o => o.id === cat.id)?.order ?? cat.order ?? 0,
+      }))
+
+      try {
+        await MenuService.updateMenuCategoryOrders(orders)
+      } catch (e: any) {
+        // Rollback on failure
+        this.menuCategories = previousCategories
+        this.error = e.message || 'Failed to reorder categories'
+        throw e
+      }
+    },
+
+    async reorderMenuItems(categoryId: string, orderedIds: string[]) {
+      const previousItems = [...this.menuItems]
+
+      // Optimistic update
+      const orders = orderedIds.map((id, index) => ({ id, order: index }))
+      this.menuItems = this.menuItems.map(item => ({
+        ...item,
+        order: item.categoryId === categoryId
+          ? (orders.find(o => o.id === item.id)?.order ?? item.order ?? 0)
+          : item.order,
+      }))
+
+      try {
+        await MenuService.updateMenuItemOrders(categoryId, orders)
+      } catch (e: any) {
+        // Rollback on failure
+        this.menuItems = previousItems
+        this.error = e.message || 'Failed to reorder menu items'
+        throw e
+      }
+    },
+
     // Cache management
     invalidateItemsCache() {
       this.lastItemsFetched = null

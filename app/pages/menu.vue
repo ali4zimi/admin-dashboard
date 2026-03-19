@@ -49,9 +49,15 @@
       </div>
 
       <div
-        v-for="category in filteredCategories"
+        v-for="(category, index) in filteredCategories"
         :key="category.id"
-        class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+        :ref="(el) => setCategoryRef(index, el as HTMLElement | null)"
+        class="category-card overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+        :class="{
+          'category-dragging': isDragging && draggedIndex === index,
+          'category-not-dragging': isDragging && draggedIndex !== index,
+        }"
+        :style="getCategoryStyle(index)"
       >
         <button
           type="button"
@@ -59,6 +65,20 @@
           @click="toggleCategory(category.id!)"
         >
           <div class="flex min-w-0 items-center gap-3">
+            <div
+              v-if="canDrag"
+              class="drag-handle flex cursor-grab items-center text-gray-400 hover:text-gray-600"
+              @pointerdown.stop.prevent="onPointerDown(index, $event)"
+            >
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="9" cy="6" r="1.5" />
+                <circle cx="15" cy="6" r="1.5" />
+                <circle cx="9" cy="12" r="1.5" />
+                <circle cx="15" cy="12" r="1.5" />
+                <circle cx="9" cy="18" r="1.5" />
+                <circle cx="15" cy="18" r="1.5" />
+              </svg>
+            </div>
             <div class="h-12 w-12 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
               <img
                 v-if="category.imageUrl"
@@ -134,11 +154,31 @@
 
           <div v-else class="space-y-2">
             <div
-              v-for="item in getVisibleCategoryItems(category.id!)"
+              v-for="(item, itemIndex) in getVisibleCategoryItems(category.id!)"
               :key="item.id"
-              class="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-3"
+              :ref="(el) => setItemRef(category.id!, itemIndex, el as HTMLElement | null)"
+              class="item-card flex items-center justify-between rounded-lg border border-gray-200 px-3 py-3"
+              :class="{
+                'item-dragging': isItemDragging && itemDragCategoryId === category.id && itemDraggedIndex === itemIndex,
+                'item-not-dragging': isItemDragging && itemDragCategoryId === category.id && itemDraggedIndex !== itemIndex,
+              }"
+              :style="getItemStyle(category.id!, itemIndex)"
             >
               <div class="flex min-w-0 items-center gap-3 pr-3">
+                <div
+                  v-if="canDrag"
+                  class="drag-handle flex cursor-grab items-center text-gray-400 hover:text-gray-600"
+                  @pointerdown.stop.prevent="onItemPointerDown(category.id!, itemIndex, $event)"
+                >
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="9" cy="6" r="1.5" />
+                    <circle cx="15" cy="6" r="1.5" />
+                    <circle cx="9" cy="12" r="1.5" />
+                    <circle cx="15" cy="12" r="1.5" />
+                    <circle cx="9" cy="18" r="1.5" />
+                    <circle cx="15" cy="18" r="1.5" />
+                  </svg>
+                </div>
                 <div class="h-11 w-11 overflow-hidden rounded border border-gray-200 bg-gray-100">
                   <img
                     v-if="item.imageUrl"
@@ -160,8 +200,8 @@
               <div class="flex items-center gap-2">
                 <div v-if="item.sizes && item.sizes.length > 0" class="flex flex-wrap items-center justify-end gap-1">
                   <span
-                    v-for="(size, index) in item.sizes"
-                    :key="`${item.id || item.name}-${size.name}-${index}`"
+                    v-for="(size, sizeIdx) in item.sizes"
+                    :key="`${item.id || item.name}-${size.name}-${sizeIdx}`"
                     class="inline-flex items-center rounded bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700"
                   >
                     {{ size.name }}: {{ formatCurrency(size.price) }}
@@ -255,6 +295,8 @@ const {
   fetchMenuCategories,
   deleteMenuItem,
   deleteMenuCategory,
+  reorderMenuCategories,
+  reorderMenuItems,
 } = useMenu()
 
 const { formatCurrency, loadRestaurantSettings } = useRestaurantSettings()
@@ -274,7 +316,12 @@ const selectedCategoryId = ref('')
 const openCategoryIds = ref<string[]>([])
 
 const sortedCategories = computed(() => {
-  return [...menuCategories.value].sort((a, b) => a.name.localeCompare(b.name))
+  return [...menuCategories.value].sort((a, b) => {
+    const orderA = a.order ?? Number.MAX_SAFE_INTEGER
+    const orderB = b.order ?? Number.MAX_SAFE_INTEGER
+    if (orderA !== orderB) return orderA - orderB
+    return a.name.localeCompare(b.name)
+  })
 })
 
 const filteredCategories = computed(() => {
@@ -324,7 +371,12 @@ const toggleCategory = (categoryId: string) => {
 const getCategoryItems = (categoryId: string) => {
   return menuItems.value
     .filter((item) => item.categoryId === categoryId)
-    .sort((a, b) => a.name.localeCompare(b.name))
+    .sort((a, b) => {
+      const orderA = a.order ?? Number.MAX_SAFE_INTEGER
+      const orderB = b.order ?? Number.MAX_SAFE_INTEGER
+      if (orderA !== orderB) return orderA - orderB
+      return a.name.localeCompare(b.name)
+    })
 }
 
 const getVisibleCategoryItems = (categoryId: string) => {
@@ -409,9 +461,277 @@ const handleCategoryDeleted = async () => {
   categoryToDelete.value = null
 }
 
+// ==================== Drag & Drop ====================
+
+const canDrag = computed(() => !searchTerm.value && !selectedCategoryId.value)
+
+const isDragging = ref(false)
+const draggedIndex = ref<number | null>(null)
+const currentIndex = ref<number | null>(null)
+const dragOffsetY = ref(0)
+const pointerY = ref(0)
+const categoryRefs = ref<(HTMLElement | null)[]>([])
+const itemRects = ref<DOMRect[]>([])
+
+const setCategoryRef = (index: number, el: HTMLElement | null) => {
+  categoryRefs.value[index] = el
+}
+
+const captureRects = () => {
+  itemRects.value = categoryRefs.value.map((el) =>
+    el ? el.getBoundingClientRect() : new DOMRect()
+  )
+}
+
+const getCategoryStyle = (index: number) => {
+  if (!isDragging.value || draggedIndex.value === null) return {}
+
+  if (index === draggedIndex.value) {
+    const startRect = itemRects.value[draggedIndex.value]
+    if (!startRect) return {}
+    const offsetY = pointerY.value - dragOffsetY.value
+    return {
+      transform: `translateY(${offsetY}px)`,
+      zIndex: 50,
+      position: 'relative' as const,
+      boxShadow: '0 10px 30px rgba(0,0,0,0.18)',
+      transition: 'box-shadow 0.2s ease',
+    }
+  }
+
+  // Shift other items to make room
+  if (currentIndex.value === null || draggedIndex.value === null) return {}
+  const dragIdx = draggedIndex.value
+  const curIdx = currentIndex.value
+  const draggedHeight = (itemRects.value[dragIdx]?.height ?? 0) + 12 // 12px gap (space-y-3)
+
+  if (dragIdx < curIdx && index > dragIdx && index <= curIdx) {
+    return { transform: `translateY(-${draggedHeight}px)` }
+  }
+  if (dragIdx > curIdx && index < dragIdx && index >= curIdx) {
+    return { transform: `translateY(${draggedHeight}px)` }
+  }
+
+  return {}
+}
+
+const onPointerDown = (index: number, event: PointerEvent) => {
+  if (!canDrag.value) return
+
+  captureRects()
+  const startRect = itemRects.value[index]
+  if (!startRect) return
+
+  draggedIndex.value = index
+  currentIndex.value = index
+  dragOffsetY.value = event.clientY
+  pointerY.value = event.clientY
+  isDragging.value = true
+
+  const onPointerMove = (e: PointerEvent) => {
+    pointerY.value = e.clientY
+
+    // Determine which index the dragged item is hovering over
+    const rects = itemRects.value
+    let newIndex = draggedIndex.value!
+    for (let i = 0; i < rects.length; i++) {
+      if (i === draggedIndex.value) continue
+      const midY = rects[i].top + rects[i].height / 2
+      if (draggedIndex.value! < i && e.clientY > midY) {
+        newIndex = i
+      } else if (draggedIndex.value! > i && e.clientY < midY) {
+        newIndex = i
+        break
+      }
+    }
+    currentIndex.value = newIndex
+  }
+
+  const onPointerUp = async () => {
+    document.removeEventListener('pointermove', onPointerMove)
+    document.removeEventListener('pointerup', onPointerUp)
+
+    const from = draggedIndex.value!
+    const to = currentIndex.value!
+
+    isDragging.value = false
+    draggedIndex.value = null
+    currentIndex.value = null
+
+    if (from === to) return
+
+    // Compute new order
+    const list = [...filteredCategories.value]
+    const [moved] = list.splice(from, 1)
+    list.splice(to, 0, moved)
+    const orderedIds = list.map((c) => c.id!)
+
+    try {
+      await reorderMenuCategories(orderedIds)
+    } catch {
+      // store already rolls back
+    }
+  }
+
+  document.addEventListener('pointermove', onPointerMove)
+  document.addEventListener('pointerup', onPointerUp)
+}
+
+// ==================== Item Drag & Drop ====================
+
+const isItemDragging = ref(false)
+const itemDragCategoryId = ref<string | null>(null)
+const itemDraggedIndex = ref<number | null>(null)
+const itemCurrentIndex = ref<number | null>(null)
+const itemDragOffsetY = ref(0)
+const itemPointerY = ref(0)
+const itemRefsMap = ref<Record<string, (HTMLElement | null)[]>>({})
+const itemRectsMap = ref<Record<string, DOMRect[]>>({})
+
+const setItemRef = (categoryId: string, index: number, el: HTMLElement | null) => {
+  if (!itemRefsMap.value[categoryId]) {
+    itemRefsMap.value[categoryId] = []
+  }
+  itemRefsMap.value[categoryId][index] = el
+}
+
+const captureItemRects = (categoryId: string) => {
+  const refs = itemRefsMap.value[categoryId] || []
+  itemRectsMap.value[categoryId] = refs.map((el) =>
+    el ? el.getBoundingClientRect() : new DOMRect()
+  )
+}
+
+const getItemStyle = (categoryId: string, index: number) => {
+  if (!isItemDragging.value || itemDragCategoryId.value !== categoryId || itemDraggedIndex.value === null) return {}
+
+  const rects = itemRectsMap.value[categoryId]
+  if (!rects) return {}
+
+  if (index === itemDraggedIndex.value) {
+    const offsetY = itemPointerY.value - itemDragOffsetY.value
+    return {
+      transform: `translateY(${offsetY}px)`,
+      zIndex: 50,
+      position: 'relative' as const,
+      boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+      transition: 'box-shadow 0.2s ease',
+    }
+  }
+
+  if (itemCurrentIndex.value === null) return {}
+  const dragIdx = itemDraggedIndex.value
+  const curIdx = itemCurrentIndex.value
+  const draggedHeight = (rects[dragIdx]?.height ?? 0) + 8 // 8px gap (space-y-2)
+
+  if (dragIdx < curIdx && index > dragIdx && index <= curIdx) {
+    return { transform: `translateY(-${draggedHeight}px)` }
+  }
+  if (dragIdx > curIdx && index < dragIdx && index >= curIdx) {
+    return { transform: `translateY(${draggedHeight}px)` }
+  }
+
+  return {}
+}
+
+const onItemPointerDown = (categoryId: string, index: number, event: PointerEvent) => {
+  if (!canDrag.value) return
+
+  captureItemRects(categoryId)
+  const rects = itemRectsMap.value[categoryId]
+  if (!rects || !rects[index]) return
+
+  itemDragCategoryId.value = categoryId
+  itemDraggedIndex.value = index
+  itemCurrentIndex.value = index
+  itemDragOffsetY.value = event.clientY
+  itemPointerY.value = event.clientY
+  isItemDragging.value = true
+
+  const onPointerMove = (e: PointerEvent) => {
+    itemPointerY.value = e.clientY
+
+    const itemRects = itemRectsMap.value[categoryId]
+    if (!itemRects) return
+    let newIndex = itemDraggedIndex.value!
+    for (let i = 0; i < itemRects.length; i++) {
+      if (i === itemDraggedIndex.value) continue
+      const midY = itemRects[i].top + itemRects[i].height / 2
+      if (itemDraggedIndex.value! < i && e.clientY > midY) {
+        newIndex = i
+      } else if (itemDraggedIndex.value! > i && e.clientY < midY) {
+        newIndex = i
+        break
+      }
+    }
+    itemCurrentIndex.value = newIndex
+  }
+
+  const onPointerUp = async () => {
+    document.removeEventListener('pointermove', onPointerMove)
+    document.removeEventListener('pointerup', onPointerUp)
+
+    const from = itemDraggedIndex.value!
+    const to = itemCurrentIndex.value!
+    const catId = itemDragCategoryId.value!
+
+    isItemDragging.value = false
+    itemDraggedIndex.value = null
+    itemCurrentIndex.value = null
+    itemDragCategoryId.value = null
+
+    if (from === to) return
+
+    const items = getVisibleCategoryItems(catId)
+    const list = [...items]
+    const [moved] = list.splice(from, 1)
+    list.splice(to, 0, moved)
+    const orderedIds = list.map((i) => i.id!)
+
+    try {
+      await reorderMenuItems(catId, orderedIds)
+    } catch {
+      // store already rolls back
+    }
+  }
+
+  document.addEventListener('pointermove', onPointerMove)
+  document.addEventListener('pointerup', onPointerUp)
+}
+
 onMounted(async () => {
   await loadRestaurantSettings()
   await fetchMenuCategories()
   await fetchMenuItems()
 })
 </script>
+
+<style scoped>
+.category-card {
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease;
+}
+.category-dragging {
+  transition: box-shadow 0.2s ease;
+  cursor: grabbing;
+  user-select: none;
+}
+.category-not-dragging {
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+  pointer-events: none;
+}
+.item-card {
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease;
+}
+.item-dragging {
+  transition: box-shadow 0.2s ease;
+  cursor: grabbing;
+  user-select: none;
+}
+.item-not-dragging {
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+  pointer-events: none;
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
+</style>
