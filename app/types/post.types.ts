@@ -17,6 +17,7 @@ export interface PostData {
   createdAt?: Timestamp
   updatedAt?: Timestamp
   cover?: string
+  coverThumbnail?: string
 }
 
 export type CreatePostData = Omit<

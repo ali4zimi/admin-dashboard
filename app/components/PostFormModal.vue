@@ -7,8 +7,8 @@
           <label class="mb-1 block text-sm font-medium text-gray-700">Cover Image</label>
           <div class="flex items-center gap-4">
             <div v-if="form.cover" class="relative h-20 w-32 rounded overflow-hidden border">
-              <img :src="form.cover" alt="Cover Preview" class="object-cover w-full h-full" />
-              <button type="button" class="absolute top-1 right-1 bg-white/80 rounded-full p-1 text-gray-600 hover:text-red-600" @click="form.cover = ''">
+              <img :src="form.coverThumbnail || form.cover" alt="Cover Preview" class="object-cover w-full h-full" />
+              <button type="button" class="absolute top-1 right-1 bg-white/80 rounded-full p-1 text-gray-600 hover:text-red-600" @click="clearCoverSelection">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -24,8 +24,8 @@
           <!-- Image Picker Modal -->
           <BaseModal v-model="showImagePicker" title="Select Cover Image" size="lg">
             <div class="grid grid-cols-3 gap-4 max-h-72 overflow-y-auto p-2">
-              <div v-for="img in imageFiles" :key="img.id" class="relative group cursor-pointer border rounded overflow-hidden" @click="selectCover(img.downloadUrl)">
-                <img :src="img.downloadUrl" :alt="img.name" class="object-cover w-full h-24" />
+              <div v-for="img in imageFiles" :key="img.id" class="relative group cursor-pointer border rounded overflow-hidden" @click="selectCover(img)">
+                <img :src="img.thumbnailDownloadUrl || img.downloadUrl" :alt="img.name" class="object-cover w-full h-24" />
                 <div class="absolute inset-0 bg-black/10 group-hover:bg-blue-500/30 transition"></div>
               </div>
               <div v-if="imageFiles.length === 0" class="col-span-3 text-center text-gray-500 py-8">No images found.</div>
@@ -134,6 +134,7 @@
 
 <script setup lang="ts">
 import type { PostData } from '~/types/post.types'
+import type { FileData } from '~/types/file.types'
 
 interface Props {
   modelValue: boolean
@@ -164,6 +165,7 @@ const handleCoverUploaded = async () => {
   const imageFile = files.value.find(f => f.type === 'Image')
   if (imageFile) {
     form.value.cover = imageFile.downloadUrl
+    form.value.coverThumbnail = imageFile.thumbnailDownloadUrl || imageFile.downloadUrl
   }
   showCoverUpload.value = false
 }
@@ -173,9 +175,15 @@ const openImagePicker = async () => {
   showImagePicker.value = true
 }
 
-const selectCover = (url: string) => {
-  form.value.cover = url
+const selectCover = (file: FileData) => {
+  form.value.cover = file.downloadUrl
+  form.value.coverThumbnail = file.thumbnailDownloadUrl || file.downloadUrl
   showImagePicker.value = false
+}
+
+const clearCoverSelection = () => {
+  form.value.cover = ''
+  form.value.coverThumbnail = ''
 }
 
 const isOpen = computed({
@@ -192,6 +200,7 @@ const form = ref({
   category: 'Technology' as 'Technology' | 'Business' | 'Design' | 'Marketing',
   status: 'Draft' as 'Published' | 'Draft' | 'Archived',
   cover: '' as string, // URL to cover image
+  coverThumbnail: '' as string,
 })
 
 // Reset form when modal opens/closes or post changes
@@ -206,6 +215,7 @@ watch(
         category: props.post.category,
         status: props.post.status,
         cover: props.post.cover || '',
+        coverThumbnail: props.post.coverThumbnail || props.post.cover || '',
       }
     } else if (props.modelValue) {
       form.value = {
@@ -215,6 +225,7 @@ watch(
         category: 'Technology',
         status: 'Draft',
         cover: '',
+        coverThumbnail: '',
       }
     }
   },

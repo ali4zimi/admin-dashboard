@@ -72,8 +72,8 @@
           <label class="block mb-1 font-medium">Image</label>
           <div class="flex items-center gap-4">
             <div v-if="form.imageUrl" class="relative h-20 w-32 rounded overflow-hidden border">
-              <img :src="form.imageUrl" alt="Image Preview" class="object-cover w-full h-full" />
-              <button type="button" class="absolute top-1 right-1 bg-white/80 rounded-full p-1 text-gray-600 hover:text-red-600" @click="form.imageUrl = ''">
+              <img :src="form.thumbnailUrl || form.imageUrl" alt="Image Preview" class="object-cover w-full h-full" />
+              <button type="button" class="absolute top-1 right-1 bg-white/80 rounded-full p-1 text-gray-600 hover:text-red-600" @click="clearImageSelection">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -88,8 +88,8 @@
           <!-- Image Picker Modal -->
           <BaseModal v-model="showImagePicker" title="Select Image" size="lg">
             <div class="grid grid-cols-3 gap-4 max-h-72 overflow-y-auto p-2">
-              <div v-for="img in imageFiles" :key="img.id" class="relative group cursor-pointer border rounded overflow-hidden" @click="selectImage(img.downloadUrl)">
-                <img :src="img.downloadUrl" :alt="img.name" class="object-cover w-full h-24" />
+              <div v-for="img in imageFiles" :key="img.id" class="relative group cursor-pointer border rounded overflow-hidden" @click="selectImage(img)">
+                <img :src="img.thumbnailDownloadUrl || img.downloadUrl" :alt="img.name" class="object-cover w-full h-24" />
                 <div class="absolute inset-0 bg-black/10 group-hover:bg-blue-500/30 transition"></div>
               </div>
               <div v-if="imageFiles.length === 0" class="col-span-3 text-center text-gray-500 py-8">No images found.</div>
@@ -118,6 +118,7 @@
 import { ref, watch, computed } from 'vue'
 import { useMenu } from '~/composables/restaurant/useMenu'
 import { useFiles } from '~/composables/useFiles'
+import type { FileData } from '~/types/file.types'
 import type { MenuItemSize } from '~/types/menu.types'
 import BaseModal from './BaseModal.vue'
 import FileUploadModal from './FileUploadModal.vue'
@@ -148,6 +149,7 @@ const form = ref({
   sizes: [] as MenuItemSize[],
   categoryId: '',
   imageUrl: '',
+  thumbnailUrl: '',
 })
 
 const normalizeSizes = (sizes: unknown): MenuItemSize[] => {
@@ -179,6 +181,7 @@ watch(
         sizes: normalizeSizes(props.menuItem.sizes),
         categoryId: props.menuItem.categoryId || '',
         imageUrl: props.menuItem.imageUrl || '',
+        thumbnailUrl: props.menuItem.thumbnailUrl || '',
       }
     } else if (props.modelValue) {
       form.value = {
@@ -188,6 +191,7 @@ watch(
         sizes: [],
         categoryId: '',
         imageUrl: '',
+        thumbnailUrl: '',
       }
     }
   },
@@ -199,6 +203,7 @@ const handleImageUploaded = async () => {
   const imageFile = files.value.find(f => f.type === 'Image')
   if (imageFile) {
     form.value.imageUrl = imageFile.downloadUrl
+    form.value.thumbnailUrl = imageFile.thumbnailDownloadUrl || imageFile.downloadUrl
   }
   showImageUpload.value = false
 }
@@ -208,9 +213,15 @@ const openImagePicker = async () => {
   showImagePicker.value = true
 }
 
-const selectImage = (url: string) => {
-  form.value.imageUrl = url
+const selectImage = (file: FileData) => {
+  form.value.imageUrl = file.downloadUrl
+  form.value.thumbnailUrl = file.thumbnailDownloadUrl || file.downloadUrl
   showImagePicker.value = false
+}
+
+const clearImageSelection = () => {
+  form.value.imageUrl = ''
+  form.value.thumbnailUrl = ''
 }
 
 const addSize = () => {

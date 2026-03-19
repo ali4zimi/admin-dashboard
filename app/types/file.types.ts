@@ -9,6 +9,10 @@ export interface FileData {
   sizeFormatted: string
   contentType: string
   downloadUrl: string
+  thumbnailFullPath?: string
+  thumbnailDownloadUrl?: string
+  thumbnailSize?: number
+  thumbnailContentType?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -41,6 +45,10 @@ export interface FileMetadataRecord {
   size: number
   contentType: string
   downloadUrl: string
+  thumbnailFullPath?: string
+  thumbnailDownloadUrl?: string
+  thumbnailSize?: number
+  thumbnailContentType?: string
   createdAt?: Date
   updatedAt?: Date
 }

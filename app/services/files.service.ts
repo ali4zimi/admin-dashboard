@@ -10,6 +10,7 @@ import {
   getMetadata,
   ref as storageRef,
   uploadBytesResumable,
+  uploadBytes,
   deleteObject,
   type UploadTaskSnapshot,
 } from 'firebase/storage'
@@ -28,6 +29,8 @@ import { getFirestore, getStorage } from './firebase'
 import type { FileMetadataRecord } from '~/types/file.types'
 
 const FILES_COLLECTION = 'files'
+const MAX_THUMBNAIL_DIMENSION = 360
+const THUMBNAIL_QUALITY = 0.8
 
 export const getFileType = (contentType: string): string => {
   if (contentType.startsWith('image/')) return 'Image'
@@ -38,6 +41,57 @@ export const getFileType = (contentType: string): string => {
   if (contentType.includes('spreadsheet') || contentType.includes('excel')) return 'Spreadsheet'
   if (contentType.includes('presentation') || contentType.includes('powerpoint')) return 'Presentation'
   return 'Other'
+}
+
+const isImageFile = (contentType: string): boolean => contentType.startsWith('image/')
+
+const loadImageElement = (file: File): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      resolve(img)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('Failed to load image for thumbnail generation'))
+    }
+    img.src = objectUrl
+  })
+}
+
+const buildThumbnailBlob = async (file: File): Promise<Blob | null> => {
+  if (typeof document === 'undefined') {
+    return null
+  }
+
+  const img = await loadImageElement(file)
+  const sourceWidth = img.naturalWidth || img.width
+  const sourceHeight = img.naturalHeight || img.height
+
+  if (!sourceWidth || !sourceHeight) {
+    return null
+  }
+
+  const scale = Math.min(MAX_THUMBNAIL_DIMENSION / sourceWidth, MAX_THUMBNAIL_DIMENSION / sourceHeight, 1)
+  const targetWidth = Math.max(1, Math.round(sourceWidth * scale))
+  const targetHeight = Math.max(1, Math.round(sourceHeight * scale))
+
+  const canvas = document.createElement('canvas')
+  canvas.width = targetWidth
+  canvas.height = targetHeight
+
+  const context = canvas.getContext('2d')
+  if (!context) {
+    return null
+  }
+
+  context.drawImage(img, 0, 0, targetWidth, targetHeight)
+
+  return await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), 'image/jpeg', THUMBNAIL_QUALITY)
+  })
 }
 
 /**
@@ -59,6 +113,10 @@ export const fetchAllFileMetadata = async (): Promise<FileMetadataRecord[]> => {
       size: data.size,
       contentType: data.contentType,
       downloadUrl: data.downloadUrl,
+      thumbnailFullPath: data.thumbnailFullPath,
+      thumbnailDownloadUrl: data.thumbnailDownloadUrl,
+      thumbnailSize: data.thumbnailSize,
+      thumbnailContentType: data.thumbnailContentType,
       createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : undefined,
       updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : undefined,
     } as FileMetadataRecord
@@ -78,6 +136,10 @@ export const uploadFileToStorage = async (
   size: number
   contentType: string
   type: string
+  thumbnailFullPath?: string
+  thumbnailDownloadUrl?: string
+  thumbnailSize?: number
+  thumbnailContentType?: string
   createdAt: Date
   updatedAt: Date
 }> => {
@@ -108,12 +170,50 @@ export const uploadFileToStorage = async (
     getMetadata(uploadTask.snapshot.ref),
   ])
 
+  let thumbnailData: {
+    thumbnailFullPath?: string
+    thumbnailDownloadUrl?: string
+    thumbnailSize?: number
+    thumbnailContentType?: string
+  } = {}
+
+  const resolvedContentType = metadata.contentType || file.type
+  if (isImageFile(resolvedContentType)) {
+    const thumbnailBlob = await buildThumbnailBlob(file)
+
+    if (thumbnailBlob) {
+      const thumbnailFullPath = `${path}/thumbnails/${Date.now()}_thumb_${file.name.replace(/\.[^/.]+$/, '')}.jpg`
+      const thumbnailRef = storageRef(storage, thumbnailFullPath)
+
+      const thumbnailSnapshot = await uploadBytes(thumbnailRef, thumbnailBlob, {
+        contentType: 'image/jpeg',
+        customMetadata: {
+          originalName: file.name,
+          variant: 'thumbnail',
+        },
+      })
+
+      const [thumbnailDownloadUrl, thumbnailMetadata] = await Promise.all([
+        getDownloadURL(thumbnailRef),
+        getMetadata(thumbnailSnapshot.ref),
+      ])
+
+      thumbnailData = {
+        thumbnailFullPath,
+        thumbnailDownloadUrl,
+        thumbnailSize: thumbnailMetadata.size,
+        thumbnailContentType: thumbnailMetadata.contentType || 'image/jpeg',
+      }
+    }
+  }
+
   return {
     fullPath,
     downloadUrl,
     size: metadata.size,
-    contentType: metadata.contentType || file.type,
-    type: getFileType(metadata.contentType || file.type),
+    contentType: resolvedContentType,
+    type: getFileType(resolvedContentType),
+    ...thumbnailData,
     createdAt: new Date(metadata.timeCreated),
     updatedAt: new Date(metadata.updated),
   }
@@ -129,6 +229,10 @@ export const createFileMetadata = async (data: {
   size: number
   contentType: string
   downloadUrl: string
+  thumbnailFullPath?: string
+  thumbnailDownloadUrl?: string
+  thumbnailSize?: number
+  thumbnailContentType?: string
 }): Promise<string> => {
   const firestore = getFirestore()
   const docRef = await addDoc(collection(firestore, FILES_COLLECTION), {
@@ -147,6 +251,27 @@ export const deleteFileFromStorage = async (fullPath: string): Promise<void> => 
   const storage = getStorage()
   const fileRef = storageRef(storage, fullPath)
   await deleteObject(fileRef)
+}
+
+/**
+ * Delete an optional thumbnail file by its full path.
+ */
+export const deleteThumbnailFromStorage = async (fullPath?: string): Promise<void> => {
+  if (!fullPath) {
+    return
+  }
+
+  const storage = getStorage()
+  const fileRef = storageRef(storage, fullPath)
+
+  try {
+    await deleteObject(fileRef)
+  } catch (error: any) {
+    // Ignore not-found errors so deleting older records without thumbnails still succeeds.
+    if (error?.code !== 'storage/object-not-found') {
+      throw error
+    }
+  }
 }
 
 /**

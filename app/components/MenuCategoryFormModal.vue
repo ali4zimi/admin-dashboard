@@ -15,11 +15,11 @@
           <label class="mb-1 block font-medium">Category Image</label>
           <div class="flex items-center gap-4">
             <div v-if="form.imageUrl" class="relative h-20 w-32 overflow-hidden rounded border">
-              <img :src="form.imageUrl" alt="Category Image" class="h-full w-full object-cover" />
+              <img :src="form.thumbnailUrl || form.imageUrl" alt="Category Image" class="h-full w-full object-cover" />
               <button
                 type="button"
                 class="absolute right-1 top-1 rounded-full bg-white/80 p-1 text-gray-600 hover:text-red-600"
-                @click="form.imageUrl = ''"
+                @click="clearImageSelection"
               >
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -53,9 +53,9 @@
                 v-for="img in imageFiles"
                 :key="img.id"
                 class="group relative cursor-pointer overflow-hidden rounded border"
-                @click="selectImage(img.downloadUrl)"
+                @click="selectImage(img)"
               >
-                <img :src="img.downloadUrl" :alt="img.name" class="h-24 w-full object-cover" />
+                <img :src="img.thumbnailDownloadUrl || img.downloadUrl" :alt="img.name" class="h-24 w-full object-cover" />
                 <div class="absolute inset-0 bg-black/10 transition group-hover:bg-blue-500/30"></div>
               </div>
               <div v-if="imageFiles.length === 0" class="col-span-3 py-8 text-center text-gray-500">No images found.</div>
@@ -90,6 +90,7 @@
 import { ref, watch, computed } from 'vue'
 import { useMenu } from '~/composables/restaurant/useMenu'
 import { useFiles } from '~/composables/useFiles'
+import type { FileData } from '~/types/file.types'
 import BaseModal from './BaseModal.vue'
 import FileUploadModal from './FileUploadModal.vue'
 
@@ -115,6 +116,7 @@ const form = ref({
   name: '',
   description: '',
   imageUrl: '',
+  thumbnailUrl: '',
 })
 
 watch(
@@ -125,12 +127,14 @@ watch(
         name: props.category.name,
         description: props.category.description || '',
         imageUrl: props.category.imageUrl || '',
+        thumbnailUrl: props.category.thumbnailUrl || '',
       }
     } else if (props.modelValue) {
       form.value = {
         name: '',
         description: '',
         imageUrl: '',
+        thumbnailUrl: '',
       }
     }
   },
@@ -142,6 +146,7 @@ const handleImageUploaded = async () => {
   const imageFile = files.value.find((f) => f.type === 'Image')
   if (imageFile) {
     form.value.imageUrl = imageFile.downloadUrl
+    form.value.thumbnailUrl = imageFile.thumbnailDownloadUrl || imageFile.downloadUrl
   }
   showImageUpload.value = false
 }
@@ -151,9 +156,15 @@ const openImagePicker = async () => {
   showImagePicker.value = true
 }
 
-const selectImage = (url: string) => {
-  form.value.imageUrl = url
+const selectImage = (file: FileData) => {
+  form.value.imageUrl = file.downloadUrl
+  form.value.thumbnailUrl = file.thumbnailDownloadUrl || file.downloadUrl
   showImagePicker.value = false
+}
+
+const clearImageSelection = () => {
+  form.value.imageUrl = ''
+  form.value.thumbnailUrl = ''
 }
 
 const handleSubmit = async () => {

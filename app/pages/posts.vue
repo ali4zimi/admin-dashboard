@@ -114,7 +114,7 @@
         class="overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md"
       >
         <div class="h-40 w-full relative">
-          <img v-if="post.cover" :src="post.cover" alt="Cover" class="object-cover w-full h-full" />
+          <img v-if="post.cover" :src="post.coverThumbnail || post.cover" alt="Cover" class="object-cover w-full h-full" />
           <div v-else class="h-40 bg-gradient-to-br w-full" :class="post.gradient || 'from-blue-400 to-blue-600'"></div>
         </div>
         <div class="p-4">
@@ -179,8 +179,18 @@
         </thead>
         <tbody class="divide-y divide-gray-200 bg-white">
           <tr v-for="post in filteredPosts" :key="post.id" class="hover:bg-gray-50">
-            <td class="whitespace-nowrap px-6 py-4">
-              <span class="text-sm font-medium text-gray-900">{{ post.title }}</span>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div v-if="post.cover" class="h-10 w-14 overflow-hidden rounded border border-gray-200 bg-gray-100">
+                  <img
+                    :src="post.coverThumbnail || post.cover"
+                    :alt="post.title"
+                    class="h-full w-full object-cover"
+                  />
+                </div>
+                <div v-else class="h-10 w-14 rounded bg-gradient-to-br" :class="post.gradient || 'from-blue-400 to-blue-600'"></div>
+                <span class="truncate text-sm font-medium text-gray-900">{{ post.title }}</span>
+              </div>
             </td>
             <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ post.category }}</td>
             <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ post.status }}</td>

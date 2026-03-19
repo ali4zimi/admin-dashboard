@@ -158,7 +158,7 @@
         <div
           v-if="file.type === 'Image'"
           class="h-32 bg-cover bg-center"
-          :style="{ backgroundImage: `url(${file.downloadUrl})` }"
+          :style="{ backgroundImage: `url(${file.thumbnailDownloadUrl || file.downloadUrl})` }"
         ></div>
         <div v-else class="flex h-32 items-center justify-center" :class="getFileBgColor(file.type)">
           <svg class="h-12 w-12" :class="getFileIconColor(file.type)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -207,10 +207,16 @@
           <tr v-for="file in filteredFiles" :key="file.id" class="hover:bg-gray-50" @click="openFileViewer(file)" style="cursor: pointer;">
             <td class="whitespace-nowrap px-6 py-4">
               <div class="flex items-center">
-                <div class="flex h-10 w-10 items-center justify-center rounded-lg" :class="getFileBgColor(file.type)">
+                <div v-if="file.type === 'Image'" class="h-10 w-10 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
+                  <img
+                    :src="file.thumbnailDownloadUrl || file.downloadUrl"
+                    :alt="file.name"
+                    class="h-full w-full object-cover"
+                  />
+                </div>
+                <div v-else class="flex h-10 w-10 items-center justify-center rounded-lg" :class="getFileBgColor(file.type)">
                   <svg class="h-5 w-5" :class="getFileIconColor(file.type)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path v-if="file.type === 'Image'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    <path v-else-if="file.type === 'Video'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    <path v-if="file.type === 'Video'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     <path v-else-if="file.type === 'PDF'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>

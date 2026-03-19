@@ -39,6 +39,10 @@ const toFileData = (record: FileMetadataRecord): FileData => ({
   sizeFormatted: formatFileSize(record.size),
   contentType: record.contentType,
   downloadUrl: record.downloadUrl,
+  thumbnailFullPath: record.thumbnailFullPath,
+  thumbnailDownloadUrl: record.thumbnailDownloadUrl,
+  thumbnailSize: record.thumbnailSize,
+  thumbnailContentType: record.thumbnailContentType,
   createdAt: record.createdAt || new Date(),
   updatedAt: record.updatedAt || new Date(),
 })
@@ -159,6 +163,10 @@ export const useFilesStore = defineStore('files', {
               size: uploadResult.size,
               contentType: uploadResult.contentType,
               downloadUrl: uploadResult.downloadUrl,
+              thumbnailFullPath: uploadResult.thumbnailFullPath,
+              thumbnailDownloadUrl: uploadResult.thumbnailDownloadUrl,
+              thumbnailSize: uploadResult.thumbnailSize,
+              thumbnailContentType: uploadResult.thumbnailContentType,
             })
 
             const newFile: FileData = {
@@ -170,6 +178,10 @@ export const useFilesStore = defineStore('files', {
               sizeFormatted: formatFileSize(uploadResult.size),
               contentType: uploadResult.contentType,
               downloadUrl: uploadResult.downloadUrl,
+              thumbnailFullPath: uploadResult.thumbnailFullPath,
+              thumbnailDownloadUrl: uploadResult.thumbnailDownloadUrl,
+              thumbnailSize: uploadResult.thumbnailSize,
+              thumbnailContentType: uploadResult.thumbnailContentType,
               createdAt: uploadResult.createdAt,
               updatedAt: uploadResult.updatedAt,
             }
@@ -223,6 +235,7 @@ export const useFilesStore = defineStore('files', {
 
       try {
         await FilesService.deleteFileFromStorage(file.fullPath)
+        await FilesService.deleteThumbnailFromStorage(file.thumbnailFullPath)
         await FilesService.deleteFileMetadataByFullPath(file.fullPath)
 
         this.files = this.files.filter((existingFile) => existingFile.fullPath !== file.fullPath)

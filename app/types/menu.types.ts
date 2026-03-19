@@ -5,6 +5,7 @@ export interface MenuCategory {
   name: string
   description?: string
   imageUrl?: string
+  thumbnailUrl?: string
   createdAt?: Timestamp
   updatedAt?: Timestamp
 }
@@ -17,6 +18,7 @@ export interface MenuItem {
   sizes?: MenuItemSize[]
   categoryId: string
   imageUrl?: string
+  thumbnailUrl?: string
   createdAt?: Timestamp
   updatedAt?: Timestamp
 }

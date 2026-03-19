@@ -62,7 +62,7 @@
             <div class="h-12 w-12 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
               <img
                 v-if="category.imageUrl"
-                :src="category.imageUrl"
+                :src="category.thumbnailUrl || category.imageUrl"
                 :alt="category.name"
                 class="h-full w-full object-cover"
               />
@@ -142,7 +142,7 @@
                 <div class="h-11 w-11 overflow-hidden rounded border border-gray-200 bg-gray-100">
                   <img
                     v-if="item.imageUrl"
-                    :src="item.imageUrl"
+                    :src="item.thumbnailUrl || item.imageUrl"
                     :alt="item.name"
                     class="h-full w-full object-cover"
                   />
@@ -365,6 +365,7 @@ const openAddItemModal = (categoryId: string) => {
     price: 0,
     categoryId,
     imageUrl: '',
+    thumbnailUrl: '',
   }
   showItemModal.value = true
 }
