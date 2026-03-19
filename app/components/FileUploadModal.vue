@@ -141,7 +141,7 @@ const emit = defineEmits<{
   'uploaded': []
 }>()
 
-const { uploading, uploadProgress, uploadFiles, formatFileSize } = useFiles()
+const { uploading, uploadProgress, uploadFiles, formatFileSize, resetUploadState } = useFiles()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const isDragging = ref(false)
@@ -178,6 +178,8 @@ const handleFileSelect = (event: Event) => {
   if (target.files) {
     selectedFiles.value = [...selectedFiles.value, ...Array.from(target.files)]
   }
+  // Allow selecting the same file again in subsequent picks.
+  target.value = ''
 }
 
 const handleDrop = (event: DragEvent) => {
@@ -205,6 +207,10 @@ const handleUpload = async () => {
 const handleClose = () => {
   if (!uploading.value) {
     selectedFiles.value = []
+    resetUploadState()
+  }
+  if (fileInput.value) {
+    fileInput.value.value = ''
   }
   isOpen.value = false
 }
@@ -213,6 +219,10 @@ const handleClose = () => {
 watch(isOpen, (value) => {
   if (value) {
     selectedFiles.value = []
+    resetUploadState()
+    if (fileInput.value) {
+      fileInput.value.value = ''
+    }
   }
 })
 </script>

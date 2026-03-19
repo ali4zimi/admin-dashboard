@@ -266,6 +266,12 @@ export const useFilesStore = defineStore('files', {
       return formatFileSize(bytes)
     },
 
+    resetUploadState() {
+      this.uploading = false
+      this.uploadProgress = []
+      this.error = null
+    },
+
     clearStore() {
       this.files = []
       this.error = null

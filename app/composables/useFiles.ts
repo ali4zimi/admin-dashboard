@@ -22,6 +22,7 @@ export const useFiles = () => {
     downloadFile: (file: import('~/types/file.types').FileData) => store.downloadFile(file),
     searchFiles: (term: string, typeFilter: string = 'All Types') => store.searchFiles(term, typeFilter),
     formatFileSize: (bytes: number) => store.formatFileSize(bytes),
+    resetUploadState: () => store.resetUploadState(),
     clearStore: () => store.clearStore(),
   }
 }
