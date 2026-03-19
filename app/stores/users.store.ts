@@ -176,7 +176,7 @@ export const useUsersStore = defineStore('users', {
           currentUserProfile.value?.id === beforeUser.id &&
           (
             userData.role === 'user' ||
-            userData.status === 'Inactive'
+            userData.status === 'inactive'
           )
         ) {
           throw new Error('Admins cannot demote or deactivate themselves')

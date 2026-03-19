@@ -51,8 +51,8 @@
             required
             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
           </select>
         </div>
       </div>
@@ -115,7 +115,7 @@ const form = ref({
   name: '',
   email: '',
   role: 'user' as 'admin' | 'user',
-  status: 'Active' as 'Active' | 'Inactive',
+  status: 'active' as 'active' | 'inactive',
 })
 
 // Reset form when modal opens/closes or user changes
@@ -134,7 +134,7 @@ watch(
         name: '',
         email: '',
         role: 'user',
-        status: 'Active',
+        status: 'active',
       }
     }
   },

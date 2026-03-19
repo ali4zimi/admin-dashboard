@@ -20,7 +20,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 import { getFirestore } from './firebase'
-import type { UserData, UserRole, CreateUserData, UpdateUserData } from '~/types/user.types'
+import type { UserData, UserRole, UserStatus, CreateUserData, UpdateUserData } from '~/types/user.types'
 
 const COLLECTION_NAME = 'users'
 
@@ -28,10 +28,15 @@ const normalizeRole = (role: unknown): UserRole => {
   return String(role).toLowerCase() === 'admin' ? 'admin' : 'user'
 }
 
+const normalizeStatus = (status: unknown): UserStatus => {
+  return String(status).toLowerCase() === 'active' ? 'active' : 'inactive'
+}
+
 const mapUserDoc = (id: string, data: Record<string, any>): UserData => ({
   id,
   ...data,
   role: normalizeRole(data.role),
+  status: normalizeStatus(data.status),
 }) as UserData
 
 /**
@@ -108,6 +113,7 @@ export const createUser = async (userData: CreateUserData): Promise<UserData> =>
   const newUserData = {
     ...userData,
     role: normalizeRole(userData.role),
+    status: normalizeStatus(userData.status),
     joined: serverTimestamp(),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -119,6 +125,7 @@ export const createUser = async (userData: CreateUserData): Promise<UserData> =>
     id: docRef.id,
     ...userData,
     role: normalizeRole(userData.role),
+    status: normalizeStatus(userData.status),
     joined: new Date(),
   }
 }
@@ -133,6 +140,7 @@ export const updateUser = async (id: string, userData: UpdateUserData): Promise<
   await updateDoc(docRef, {
     ...userData,
     ...(userData.role ? { role: normalizeRole(userData.role) } : {}),
+    ...(userData.status ? { status: normalizeStatus(userData.status) } : {}),
     updatedAt: serverTimestamp(),
   })
 }

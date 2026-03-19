@@ -44,9 +44,9 @@
           class="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           @change="handleSearch"
         >
-          <option>All Status</option>
-          <option>Active</option>
-          <option>Inactive</option>
+          <option value="All Status">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
         </select>
       </div>
     </div>
@@ -126,7 +126,7 @@
                     user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                   ]"
                 >
-                  {{ user.status }}
+                  {{ user.status === 'active' ? 'Active' : 'Inactive' }}
                 </span>
               </td>
               <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ formatDate(user.joined) }}</td>
