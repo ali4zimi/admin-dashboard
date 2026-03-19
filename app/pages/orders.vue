@@ -84,7 +84,7 @@
             <span>Status: {{ order.status.charAt(0).toUpperCase() + order.status.slice(1) }}</span>
           </div>
           <div class="mt-1 flex items-center justify-between text-xs text-gray-500">
-            <span>Total: ${{ order.totalAmount.toFixed(2) }}</span>
+            <span>Total: {{ formatCurrency(order.totalAmount) }}</span>
             <span>Items: {{ order.items?.length || 0 }}</span>
           </div>
           <div class="mt-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -129,6 +129,7 @@
 
 <script setup lang="ts">
 import { useOrders } from '~/composables/restaurant/useOrders'
+import { useRestaurantSettings } from '~/composables/useRestaurantSettings'
 import DeleteConfirmModal from '~/components/DeleteConfirmModal.vue'
 import OrderFormModal from '~/components/OrderFormModal.vue'
 
@@ -142,6 +143,8 @@ const {
   fetchOrders,
   deleteOrder,
 } = useOrders()
+
+const { formatCurrency, loadRestaurantSettings } = useRestaurantSettings()
 
 const searchTerm = ref('')
 const filterStatus = ref('')
@@ -187,6 +190,7 @@ const handleOrderCreated = async () => {
   await fetchOrders()
 }
 onMounted(async () => {
+  await loadRestaurantSettings()
   await fetchOrders()
 })
 </script>

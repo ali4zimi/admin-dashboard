@@ -232,6 +232,7 @@
 <script setup lang="ts">
 import type { MenuCategory, MenuItem } from '~/types/menu.types'
 import { useMenu } from '~/composables/restaurant/useMenu'
+import { useRestaurantSettings } from '~/composables/useRestaurantSettings'
 
 useHead({
   title: 'Menu Management - Admin Panel',
@@ -246,6 +247,8 @@ const {
   deleteMenuItem,
   deleteMenuCategory,
 } = useMenu()
+
+const { formatCurrency, loadRestaurantSettings } = useRestaurantSettings()
 
 const showCategoryModal = ref(false)
 const showItemModal = ref(false)
@@ -331,13 +334,6 @@ const getVisibleCategoryItems = (categoryId: string) => {
   })
 }
 
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(value || 0)
-}
-
 const openCreateCategoryModal = () => {
   editingCategory.value = null
   showCategoryModal.value = true
@@ -404,6 +400,7 @@ const handleCategoryDeleted = async () => {
 }
 
 onMounted(async () => {
+  await loadRestaurantSettings()
   await fetchMenuCategories()
   await fetchMenuItems()
 })

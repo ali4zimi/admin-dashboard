@@ -41,7 +41,7 @@
               <select v-model="item.itemId" @change="onMenuItemChange(idx)" class="rounded border px-2 py-1 w-1/2">
                 <option value="" disabled>Select menu item</option>
                 <option v-for="menuItem in menuItems" :key="menuItem.id" :value="menuItem.id">
-                  {{ menuItem.name }} ({{ menuItem.price | currency }})
+                  {{ menuItem.name }} ({{ formatCurrency(menuItem.price) }})
                 </option>
               </select>
               <input v-model.number="item.quantity" type="number" min="1" placeholder="Qty" class="rounded border px-2 py-1 w-1/6" />
@@ -56,7 +56,7 @@
             </div>
             <div class="flex gap-2 items-center w-full text-xs text-gray-500" v-if="item.name">
               <span>Name: {{ item.name }}</span>
-              <span>Price: {{ item.price | currency }}</span>
+              <span>Price: {{ formatCurrency(item.price) }}</span>
             </div>
           </div>
           <button type="button" class="rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-200 mt-2" @click="addItem">Add Item</button>
@@ -80,6 +80,7 @@
 import { ref, watch, computed } from 'vue'
 import { useOrders } from '~/composables/restaurant/useOrders'
 import { useMenu } from '~/composables/restaurant/useMenu'
+import { useRestaurantSettings } from '~/composables/useRestaurantSettings'
 import { useTables, type Table } from '~/composables/restaurant/useTables'
 const { tables, fetchTables } = useTables()
 import BaseModal from './BaseModal.vue'
@@ -89,6 +90,7 @@ const emit = defineEmits(['update:modelValue', 'saved'])
 
 const { createOrder, updateOrder } = useOrders()
 const { fetchMenuItems, menuItems } = useMenu()
+const { formatCurrency, loadRestaurantSettings } = useRestaurantSettings()
 
 const loading = ref(false)
 
@@ -180,6 +182,7 @@ const handleSubmit = async () => {
 }
 
 onMounted(() => {
+  loadRestaurantSettings()
   fetchMenuItems()
   fetchTables()
 })
@@ -194,11 +197,6 @@ const onMenuItemChange = (idx: number) => {
     item.name = ''
     item.price = 0
   }
-}
-// Currency filter for price display
-const currency = (value: number) => {
-  if (typeof value !== 'number') return value
-  return '$' + value.toFixed(2)
 }
 </script>
 
