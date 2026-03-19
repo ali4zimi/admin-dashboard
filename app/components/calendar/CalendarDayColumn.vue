@@ -58,7 +58,7 @@ const props = defineProps<{
   dragUpdateKey: number,
   onEventDragStart: (...args: any[]) => void
 }>()
-const emit = defineEmits(['event-click', 'event-drag-end']);
+const emit = defineEmits(['event-click']);
 
 
 let dragJustEnded = false;
@@ -71,7 +71,7 @@ function handleEventClick(ev: CalendarEvent) {
   emit('event-click', ev);
 }
 
-// Drag event emit logic
+// Drag bookkeeping for click suppression
 let lastDraggedEvent: CalendarEvent | null = null;
 function onEventDragStartWrapper(...args: any[]) {
   // args: ($event, ev, dayObj, hour, $event)
@@ -92,9 +92,6 @@ function onEventDragEndWrapper(e: MouseEvent) {
       dragJustEnded = true;
       setTimeout(() => { dragJustEnded = false; }, 0);
     }
-    // Deep clone to avoid mutation issues
-    const eventCopy = JSON.parse(JSON.stringify(lastDraggedEvent));
-    emit('event-drag-end', eventCopy);
     lastDraggedEvent = null;
     dragStartPos = null;
   }

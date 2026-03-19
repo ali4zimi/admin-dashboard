@@ -22,9 +22,7 @@
         :event-end-time="eventEndTime"
         :drag-update-key="dragUpdateKey"
         :on-event-drag-start="onEventDragStart"
-        :on-event-drag-end="onEventDragEnd"
         @event-click="handleEventClick"
-        @event-drag-end="handleEventDragEnd"
       />
       <!-- Dialogs moved to Calendar.vue -->
     </div>
@@ -45,7 +43,7 @@ interface CalendarEvent {
 function handleEventClick(ev: CalendarEvent) {
   emit('event-click', ev);
 }
-import { computed, ref } from 'vue'
+import { computed, ref, onUnmounted } from 'vue'
 import CalendarTimeGrid from './CalendarTimeGrid.vue'
 import CalendarDayColumn from './CalendarDayColumn.vue'
 // Dialogs moved to Calendar.vue
@@ -204,12 +202,36 @@ function onEventDrag(e: MouseEvent) {
 function onEventDragEnd() {
   document.removeEventListener('mousemove', onEventDrag)
   document.removeEventListener('mouseup', onEventDragEnd)
-  handleEventDragEnd(draggingEvent.value)
+
+  if (draggingEvent.value) {
+    handleEventDragEnd(draggingEvent.value)
+  }
+
+  // Reset drag state so subsequent drags always work.
+  draggingEvent.value = null
+  dragDayObj.value = null
+  dragOffsetY.value = 0
+  dragOffsetX.value = 0
+  dragStartHour.value = 0
+  dragStartMinute.value = 0
 }
 
 function handleEventDragEnd(eventObj: CalendarEvent) {
-  emit('event-change', eventObj);
+  if (!eventObj) return
+
+  // Ensure date stays a Date object after drag updates.
+  const normalizedEvent = {
+    ...eventObj,
+    date: eventObj.date instanceof Date ? eventObj.date : new Date(eventObj.date),
+  }
+
+  emit('event-change', normalizedEvent);
 }
+
+onUnmounted(() => {
+  document.removeEventListener('mousemove', onEventDrag)
+  document.removeEventListener('mouseup', onEventDragEnd)
+})
 
 // Dialog state moved to Calendar.vue
 const emit = defineEmits(['prev', 'next', 'event-click', 'dialog-close', 'edit-event', 'edit-dialog-close', 'event-change']);
