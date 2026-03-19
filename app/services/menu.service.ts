@@ -7,7 +7,6 @@
 
 import {
   collection,
-  collectionGroup,
   doc,
   getDocs,
   getDoc,
@@ -17,9 +16,6 @@ import {
   deleteDoc,
   query,
   orderBy,
-  where,
-  limit,
-  documentId,
   serverTimestamp,
 } from 'firebase/firestore'
 import { getFirestore } from './firebase'
@@ -63,15 +59,38 @@ const mapNestedItemDoc = (docItem: any): MenuItem => {
 
 const findNestedItemById = async (id: string) => {
   const firestore = getFirestore()
-  const itemsGroup = collectionGroup(firestore, ITEMS_SUBCOLLECTION)
-  const itemQuery = query(itemsGroup, where(documentId(), '==', id), limit(1))
-  const snapshot = await getDocs(itemQuery)
+  const [menuSnapshot, legacyMenuSnapshot] = await Promise.all([
+    getDocs(collection(firestore, MENU_COLLECTION)),
+    getDocs(collection(firestore, LEGACY_CATEGORIES_COLLECTION)),
+  ])
 
-  if (snapshot.empty) {
-    return null
+  const categoryRefs = [
+    ...menuSnapshot.docs.map((categoryDoc) => ({
+      collectionName: MENU_COLLECTION,
+      categoryId: categoryDoc.id,
+    })),
+    ...legacyMenuSnapshot.docs.map((categoryDoc) => ({
+      collectionName: LEGACY_CATEGORIES_COLLECTION,
+      categoryId: categoryDoc.id,
+    })),
+  ]
+
+  for (const categoryRef of categoryRefs) {
+    const nestedRef = doc(
+      firestore,
+      categoryRef.collectionName,
+      categoryRef.categoryId,
+      ITEMS_SUBCOLLECTION,
+      id
+    )
+    const nestedSnap = await getDoc(nestedRef)
+
+    if (nestedSnap.exists()) {
+      return nestedSnap
+    }
   }
 
-  return snapshot.docs[0]!
+  return null
 }
 
 // ==================== Menu Items ====================

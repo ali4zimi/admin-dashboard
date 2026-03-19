@@ -158,7 +158,16 @@
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <span class="text-sm font-semibold text-gray-900">{{ formatCurrency(item.price) }}</span>
+                <div v-if="item.sizes && item.sizes.length > 0" class="flex flex-wrap items-center justify-end gap-1">
+                  <span
+                    v-for="(size, index) in item.sizes"
+                    :key="`${item.id || item.name}-${size.name}-${index}`"
+                    class="inline-flex items-center rounded bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700"
+                  >
+                    {{ size.name }}: {{ formatCurrency(size.price) }}
+                  </span>
+                </div>
+                <span v-else class="text-sm font-semibold text-gray-900">{{ formatCurrency(item.price) }}</span>
                 <button
                   type="button"
                   class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-blue-600"

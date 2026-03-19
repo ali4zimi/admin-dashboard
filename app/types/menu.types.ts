@@ -14,10 +14,16 @@ export interface MenuItem {
   name: string
   description?: string
   price: number
+  sizes?: MenuItemSize[]
   categoryId: string
   imageUrl?: string
   createdAt?: Timestamp
   updatedAt?: Timestamp
+}
+
+export interface MenuItemSize {
+  name: string
+  price: number
 }
 
 export type CreateMenuItemData = Omit<MenuItem, 'id' | 'createdAt' | 'updatedAt'>
