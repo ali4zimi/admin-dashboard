@@ -74,13 +74,31 @@
       <div
         v-for="table in filteredTables"
         :key="table.id"
-        class="group cursor-pointer overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md"
+        class="group relative pt-4 cursor-pointer overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md"
       >
-        <div class="flex h-32 items-center justify-center bg-gray-50">
-          <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
+        <div class="absolute right-2 top-2 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          <button
+            class="inline-flex h-7 w-7 items-center justify-center rounded bg-blue-50 text-blue-600 hover:bg-blue-100"
+            @click="openEditModal(table)"
+            aria-label="Edit table"
+            title="Edit"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6-6a2 2 0 112.828 2.828l-6 6a2 2 0 01-2.828-2.828z" />
+            </svg>
+          </button>
+          <button
+            class="inline-flex h-7 w-7 items-center justify-center rounded bg-red-50 text-red-600 hover:bg-red-100"
+            @click="openDeleteModal(table)"
+            aria-label="Delete table"
+            title="Delete"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
         </div>
+
         <div class="p-3">
           <p class="truncate text-sm font-medium text-gray-900">{{ table.name }}</p>
           <div class="mt-1 flex items-center justify-between text-xs text-gray-500">
@@ -89,20 +107,6 @@
               <span class="w-2 h-2 rounded-full mr-1" :class="statusDotClass(table.status)"></span>
               {{ table.status.charAt(0).toUpperCase() + table.status.slice(1) }}
             </span>
-          </div>
-          <div class="mt-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-            <button
-              class="flex-1 rounded bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100"
-              @click="openEditModal(table)"
-            >
-              Edit
-            </button>
-            <button
-              class="rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-100"
-              @click="openDeleteModal(table)"
-            >
-              Delete
-            </button>
           </div>
         </div>
       </div>

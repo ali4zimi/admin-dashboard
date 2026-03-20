@@ -87,12 +87,7 @@
           <tr v-for="reservation in filteredReservations" :key="reservation.id" class="hover:bg-gray-50">
             <td class="whitespace-nowrap px-6 py-4">
               <div class="flex items-center">
-                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-50">
-                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                  </svg>
-                </div>
-                <span class="ml-3 text-sm font-medium text-gray-900">{{ reservation.customerName }}</span>
+                <span class="text-sm font-medium text-gray-900">{{ reservation.customerName }}</span>
               </div>
             </td>
             <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ reservation.customerName }}</td>
