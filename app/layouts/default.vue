@@ -38,7 +38,7 @@
               @click="closeSidebarOnMobile"
             >
               <svg class="mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24"><!-- Icon from Material Design Icons by Pictogrammers - https://github.com/Templarian/MaterialDesign/blob/master/LICENSE --><path fill="currentColor" d="M16.5 12A2.5 2.5 0 0 0 19 9.5A2.5 2.5 0 0 0 16.5 7A2.5 2.5 0 0 0 14 9.5a2.5 2.5 0 0 0 2.5 2.5M9 11a3 3 0 0 0 3-3a3 3 0 0 0-3-3a3 3 0 0 0-3 3a3 3 0 0 0 3 3m7.5 3c-1.83 0-5.5.92-5.5 2.75V19h11v-2.25c0-1.83-3.67-2.75-5.5-2.75M9 13c-2.33,0 -7,1.17 -7,3.5V19h7v-2.25c0-.85 .33,-2.34,2.37,-3.47C10,14 .66,14,9,14"/></svg>
-              User Management
+              Users
             </NuxtLink>
           </li>
           <li>
@@ -99,6 +99,19 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               Reservations
+            </NuxtLink>
+          </li>
+          <li>
+            <NuxtLink
+              to="/orders"
+              class="flex items-center rounded-lg px-4 py-3 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+              active-class="bg-gray-800 text-white"
+              @click="closeSidebarOnMobile"
+            >
+              <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14l-1 11a2 2 0 01-2 2H8a2 2 0 01-2-2L5 8zm3 0V6a4 4 0 118 0v2" />
+              </svg>
+              Orders
             </NuxtLink>
           </li>
           <li>

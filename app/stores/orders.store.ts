@@ -42,6 +42,34 @@ export const useOrdersStore = defineStore('orders', {
   },
 
   actions: {
+    async buildItemsSnapshot(items: OrderItemInput[]) {
+      const itemsWithSnapshot: Omit<OrderItem, 'id'>[] = []
+
+      for (const item of items) {
+        let name = item.name || ''
+        let price = item.price || 0
+
+        if ((!name || !price) && item.itemId) {
+          const menuItem = await MenuService.fetchMenuItemById(item.itemId)
+          if (menuItem) {
+            name = menuItem.name
+            price = menuItem.price
+          }
+        }
+
+        itemsWithSnapshot.push({
+          itemId: item.itemId,
+          name,
+          price,
+          quantity: item.quantity,
+          notes: item.notes,
+          status: item.status,
+        })
+      }
+
+      return itemsWithSnapshot
+    },
+
     async fetchOrders(forceRefresh = false) {
       if (!forceRefresh && this.isCacheValid && this.orders.length > 0) {
         return this.orders
@@ -87,29 +115,7 @@ export const useOrdersStore = defineStore('orders', {
       this.error = null
 
       try {
-        const itemsWithSnapshot: Omit<OrderItem, 'id'>[] = []
-
-        for (const item of orderData.items) {
-          let name = item.name || ''
-          let price = item.price || 0
-
-          if ((!name || !price) && item.itemId) {
-            const menuItem = await MenuService.fetchMenuItemById(item.itemId)
-            if (menuItem) {
-              name = menuItem.name
-              price = menuItem.price
-            }
-          }
-
-          itemsWithSnapshot.push({
-            itemId: item.itemId,
-            name,
-            price,
-            quantity: item.quantity,
-            notes: item.notes,
-            status: item.status,
-          })
-        }
+        const itemsWithSnapshot = await this.buildItemsSnapshot(orderData.items)
 
         const newOrder = await OrdersService.createOrder({
           table: orderData.table,
@@ -154,11 +160,16 @@ export const useOrdersStore = defineStore('orders', {
 
       try {
         const beforeOrder = this.orders.find((order) => order.id === id)
+        const dataToUpdate: UpdateOrderData = { ...orderData }
 
-        await OrdersService.updateOrder(id, orderData)
+        if (orderData.items) {
+          dataToUpdate.items = await this.buildItemsSnapshot(orderData.items as OrderItemInput[]) as any
+        }
+
+        await OrdersService.updateOrder(id, dataToUpdate)
 
         this.orders = this.orders.map((order) =>
-          order.id === id ? { ...order, ...orderData } : order
+          order.id === id ? { ...order, ...dataToUpdate } : order
         )
 
         const afterOrder = this.orders.find((order) => order.id === id)

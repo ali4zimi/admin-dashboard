@@ -32,7 +32,8 @@ interface CreateOrderServiceData {
 }
 
 /**
- * Fetch all orders with items subcollection, ordered by creation date.
+ * Fetch all orders ordered by creation date.
+ * Items are stored directly on each order document.
  */
 export const fetchAllOrders = async (): Promise<Order[]> => {
   const firestore = getFirestore()
@@ -40,26 +41,19 @@ export const fetchAllOrders = async (): Promise<Order[]> => {
   const q = query(ordersRef, orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
 
-  const orders: Order[] = []
-
-  for (const orderDoc of snapshot.docs) {
-    const orderData = { id: orderDoc.id, ...orderDoc.data() } as Order
-    const itemsRef = collection(orderDoc.ref, 'items')
-    const itemsSnap = await getDocs(itemsRef)
-
-    orderData.items = itemsSnap.docs.map((itemDoc) => ({
-      id: itemDoc.id,
-      ...itemDoc.data(),
-    })) as OrderItem[]
-
-    orders.push(orderData)
-  }
-
-  return orders
+  return snapshot.docs.map((orderDoc) => {
+    const data = orderDoc.data() as Omit<Order, 'id'>
+    return {
+      id: orderDoc.id,
+      ...data,
+      items: data.items || [],
+    }
+  }) as Order[]
 }
 
 /**
- * Fetch one order with items by ID.
+ * Fetch one order by ID.
+ * Items are stored directly on the order document.
  */
 export const fetchOrderById = async (id: string): Promise<Order | null> => {
   const firestore = getFirestore()
@@ -70,89 +64,84 @@ export const fetchOrderById = async (id: string): Promise<Order | null> => {
     return null
   }
 
-  const orderData = { id: docSnap.id, ...docSnap.data() } as Order
-  const itemsRef = collection(docRef, 'items')
-  const itemsSnap = await getDocs(itemsRef)
+  const data = docSnap.data() as Omit<Order, 'id'>
 
-  orderData.items = itemsSnap.docs.map((itemDoc) => ({
-    id: itemDoc.id,
-    ...itemDoc.data(),
-  })) as OrderItem[]
-
-  return orderData
+  return {
+    id: docSnap.id,
+    ...data,
+    items: data.items || [],
+  } as Order
 }
 
 /**
- * Create order document and items subcollection.
+ * Create order document with items embedded in the same document.
  */
 export const createOrder = async (orderData: CreateOrderServiceData): Promise<Order> => {
   const firestore = getFirestore()
   const ordersRef = collection(firestore, ORDER_COLLECTION)
 
-  const { items, ...orderFields } = orderData
   const newOrderData = {
-    ...orderFields,
+    ...orderData,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   }
 
   const docRef = await addDoc(ordersRef, newOrderData)
 
-  for (const item of items) {
-    await addDoc(collection(docRef, 'items'), item)
-  }
-
   return {
     id: docRef.id,
-    ...orderFields,
-    items,
+    ...orderData,
   }
 }
 
 /**
- * Update order document fields (items are managed through item-specific APIs).
+ * Update order document fields, including items.
  */
 export const updateOrder = async (id: string, orderData: Partial<Order>): Promise<void> => {
   const firestore = getFirestore()
   const docRef = doc(firestore, ORDER_COLLECTION, id)
 
-  const { items, ...updatableFields } = orderData
-
   await updateDoc(docRef, {
-    ...updatableFields,
+    ...orderData,
     updatedAt: serverTimestamp(),
   })
 }
 
 /**
- * Delete order and all items in its subcollection.
+ * Delete order by ID.
  */
 export const deleteOrder = async (id: string): Promise<void> => {
   const firestore = getFirestore()
   const docRef = doc(firestore, ORDER_COLLECTION, id)
-
-  const itemsRef = collection(docRef, 'items')
-  const itemsSnap = await getDocs(itemsRef)
-
-  for (const itemDoc of itemsSnap.docs) {
-    await deleteDoc(itemDoc.ref)
-  }
-
   await deleteDoc(docRef)
 }
 
 /**
- * Add one item to order items subcollection.
+ * Add one item to order items array.
  */
 export const addOrderItem = async (orderId: string, item: Omit<OrderItem, 'id'>): Promise<OrderItem> => {
   const firestore = getFirestore()
   const orderRef = doc(firestore, ORDER_COLLECTION, orderId)
-  const itemRef = await addDoc(collection(orderRef, 'items'), item)
+  const orderSnap = await getDoc(orderRef)
 
-  return {
-    id: itemRef.id,
+  if (!orderSnap.exists()) {
+    throw new Error('Order not found')
+  }
+
+  const orderData = orderSnap.data() as Partial<Order>
+  const currentItems = (orderData.items || []) as OrderItem[]
+
+  const newItem: OrderItem = {
+    id: `item_${Date.now()}`,
     ...item,
   }
+
+  await updateDoc(orderRef, {
+    items: [...currentItems, newItem],
+    updatedAt: serverTimestamp(),
+  })
+
+  return newItem
 }
 
 /**
@@ -165,9 +154,23 @@ export const updateOrderItem = async (
 ): Promise<void> => {
   const firestore = getFirestore()
   const orderRef = doc(firestore, ORDER_COLLECTION, orderId)
-  const itemRef = doc(orderRef, 'items', itemId)
+  const orderSnap = await getDoc(orderRef)
 
-  await updateDoc(itemRef, itemData)
+  if (!orderSnap.exists()) {
+    throw new Error('Order not found')
+  }
+
+  const orderData = orderSnap.data() as Partial<Order>
+  const currentItems = (orderData.items || []) as OrderItem[]
+
+  const updatedItems = currentItems.map((item) =>
+    item.id === itemId ? { ...item, ...itemData } : item
+  )
+
+  await updateDoc(orderRef, {
+    items: updatedItems,
+    updatedAt: serverTimestamp(),
+  })
 }
 
 /**
@@ -176,7 +179,18 @@ export const updateOrderItem = async (
 export const deleteOrderItem = async (orderId: string, itemId: string): Promise<void> => {
   const firestore = getFirestore()
   const orderRef = doc(firestore, ORDER_COLLECTION, orderId)
-  const itemRef = doc(orderRef, 'items', itemId)
+  const orderSnap = await getDoc(orderRef)
 
-  await deleteDoc(itemRef)
+  if (!orderSnap.exists()) {
+    throw new Error('Order not found')
+  }
+
+  const orderData = orderSnap.data() as Partial<Order>
+  const currentItems = (orderData.items || []) as OrderItem[]
+  const filteredItems = currentItems.filter((item) => item.id !== itemId)
+
+  await updateDoc(orderRef, {
+    items: filteredItems,
+    updatedAt: serverTimestamp(),
+  })
 }

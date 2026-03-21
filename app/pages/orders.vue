@@ -70,40 +70,76 @@
       </button>
     </div>
 
-    <!-- Order grid view -->
-    <div v-else class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      <div
-        v-for="order in filteredOrders"
-        :key="order.id"
-        class="group cursor-pointer overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md"
-      >
-        <div class="p-3">
-          <p class="truncate text-sm font-medium text-gray-900">Table: {{ order.table.name }}</p>
-          <div class="mt-1 flex items-center justify-between text-xs text-gray-500">
-            <span>Type: {{ order.orderType }}</span>
-            <span>Status: {{ order.status.charAt(0).toUpperCase() + order.status.slice(1) }}</span>
-          </div>
-          <div class="mt-1 flex items-center justify-between text-xs text-gray-500">
-            <span>Total: {{ formatCurrency(order.totalAmount) }}</span>
-            <span>Items: {{ order.items?.length || 0 }}</span>
-          </div>
-          <div class="mt-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-            <button
-              class="flex-1 rounded bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100"
-              @click="openEditModal(order)"
-            >
-              Edit
-            </button>
-            <button
-              class="rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-100"
-              @click="openDeleteModal(order)"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
+    <!-- Order list view -->
+    <div v-else class="overflow-hidden rounded-lg bg-white shadow-sm">
+        <table class="min-w-full table-fixed divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="w-28 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Table</th>
+              <th class="w-24 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Type</th>
+              <th class="w-28 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
+              <th class="w-[38%] px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Items</th>
+              <th class="w-32 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Total</th>
+              <th class="w-24 px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 bg-white">
+            <tr v-for="order in filteredOrders" :key="order.id" class="hover:bg-gray-50">
+              <td class="px-4 py-4 align-top">
+                <div class="flex items-center">
+                  <span class="text-sm font-medium text-gray-900">{{ order.table?.name || 'N/A' }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-4 align-top text-sm text-gray-500">{{ order.orderType }}</td>
+              <td class="px-4 py-4 align-top">
+                <div class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                  :class="{
+                    'bg-yellow-100 text-yellow-800': order.status === 'pending',
+                    'bg-blue-100 text-blue-800': order.status === 'preparing',
+                    'bg-green-100 text-green-800': order.status === 'served',
+                    'bg-purple-100 text-purple-800': order.status === 'paid',
+                    'bg-red-100 text-red-800': order.status === 'cancelled',
+                  }">
+                  {{ order.status.charAt(0).toUpperCase() + order.status.slice(1) }}
+                </div>
+              </td>
+              <td class="px-4 py-4 align-top text-sm text-gray-500">
+                <div v-if="order.items && order.items.length > 0" class="flex flex-wrap gap-2">
+                  <div
+                    v-for="(item, index) in order.items"
+                    :key="`${order.id || 'order'}-item-${item.itemId || index}-${index}`"
+                    class="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700"
+                  >
+                    {{ item.quantity }} x {{ item.name || 'Unknown item' }}
+                  </div>
+                </div>
+                <span v-else class="text-gray-400 italic">No items</span>
+              </td>
+              <td class="px-4 py-4 align-top text-sm font-medium text-gray-900">{{ formatCurrency(getOrderTotal(order)) }}</td>
+              <td class="px-4 py-4 align-top text-right text-sm">
+                <div class="flex justify-end space-x-2">
+                  <button
+                    class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-blue-600"
+                    @click="openEditModal(order)"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6-6a2 2 0 012.828 2.828l-6 6a2 2 0 01-2.828-2.828z" />
+                    </svg>
+                  </button>
+                  <button
+                    class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-600"
+                    @click="openDeleteModal(order)"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </div>
 
     <!-- Results info -->
     <div v-if="filteredOrders.length > 0" class="mt-6 text-center">
@@ -166,6 +202,18 @@ const filteredOrders = computed(() => {
   }
   return items
 })
+
+const getOrderTotal = (order: any) => {
+  if (order?.items && order.items.length > 0) {
+    return order.items.reduce((sum: number, item: any) => {
+      const price = Number(item?.price || 0)
+      const qty = Number(item?.quantity || 0)
+      return sum + price * qty
+    }, 0)
+  }
+
+  return Number(order?.totalAmount || 0)
+}
 
 const openDeleteModal = (order: any) => {
   orderToDelete.value = order
