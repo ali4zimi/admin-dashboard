@@ -63,21 +63,14 @@
 
         <div>
           <label class="mb-1 block text-sm font-medium text-gray-700">Table(s)</label>
-          <select
+          <TableSelector
             v-model="form.tableIds"
+            :items="availableTableOptions"
             multiple
-            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            <option
-              v-for="table in availableTableOptions"
-              :key="table.id"
-              :value="table.id"
-            >
-              {{ table.name }} ({{ table.capacity }} seats){{ table.status !== 'available' ? ` - ${table.status}` : '' }}
-            </option>
-          </select>
+            placeholder="Select table(s)"
+          />
           <p class="mt-1 text-xs text-gray-500">
-            Select one or more available tables. Hold Ctrl/Cmd for multiple selection.
+            Select one or more tables using checkboxes.
           </p>
           <p v-if="availableTableOptions.length === 0" class="mt-1 text-xs text-amber-600">
             No available tables found.
@@ -179,6 +172,7 @@ import { storeToRefs } from 'pinia'
 import { useReservations } from '~/composables/restaurant/useReservations'
 import { useTablesStore } from '~/stores/tables.store'
 import BaseWizardModal from './BaseWizardModal.vue'
+import TableSelector from './TableSelector.vue'
 import type { WizardStep } from './BaseWizardModal.vue'
 
 const props = defineProps<{ modelValue: boolean, reservation?: any }>()
