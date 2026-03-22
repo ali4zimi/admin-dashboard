@@ -24,11 +24,13 @@ const ORDER_COLLECTION = 'orders'
 
 interface CreateOrderServiceData {
   table: Order['table']
+  tableIds?: string[]
   status: Order['status']
   orderType: Order['orderType']
   totalAmount: number
   createdBy: string
   items: Omit<OrderItem, 'id'>[]
+  orderNumber?: string
 }
 
 /**

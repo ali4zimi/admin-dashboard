@@ -26,6 +26,7 @@ export interface OrderItemInput {
 
 export interface Order {
   id?: string
+  orderNumber?: string
   table: Table
   tableIds?: string[]
   status: OrderStatus

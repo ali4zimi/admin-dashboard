@@ -11,7 +11,10 @@
           >
             <div class="flex h-full flex-col">
               <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4 lg:px-6">
-                <h3 class="text-lg font-semibold text-gray-900">{{ isEditing ? 'Edit Order' : 'Add Order' }}</h3>
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900">{{ isEditing ? 'Edit Order' : 'Add Order' }}</h3>
+                  <p v-if="isEditing && props.order?.orderNumber" class="text-sm text-gray-500">Order: {{ props.order.orderNumber }}</p>
+                </div>
                 <button
                   type="button"
                   class="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
@@ -52,16 +55,8 @@
                   </div>
 
                   <div>
-                    <label class="mb-1 block font-medium">Total Amount</label>
-                    <input v-model.number="form.totalAmount" type="number" min="0" required class="w-full rounded border px-3 py-2" />
-                  </div>
-
-                  <div>
                     <div class="mb-2 flex items-center justify-between">
                       <label class="block font-medium">Order Items</label>
-                      <button type="button" class="rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-200" @click="addItem">
-                        Add Item
-                      </button>
                     </div>
 
                     <p v-if="showItemsValidation" class="mb-2 text-sm text-red-600">
@@ -98,6 +93,12 @@
                       <p v-if="form.items.length === 0" class="rounded border border-dashed border-gray-300 p-4 text-sm text-gray-500">
                         No items added yet.
                       </p>
+
+                      <div class="pt-1">
+                        <button type="button" class="rounded bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-200" @click="addItem">
+                          Add Item
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -109,7 +110,7 @@
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
                       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    {{ isEditing ? 'Update Order' : 'Create Order' }}
+                    {{ isEditing ? 'Update Order' : 'Create Order' }} · {{ formatCurrency(calculatedTotalAmount) }}
                   </button>
                 </div>
               </form>
@@ -207,6 +208,14 @@ const hasAtLeastOneValidItem = computed(() => {
   return form.value.items.some((item) => !!item.itemId && Number(item.quantity) > 0)
 })
 
+const calculatedTotalAmount = computed(() => {
+  return form.value.items.reduce((sum, item) => {
+    const quantity = Number(item.quantity) || 0
+    const price = Number(item.price) || 0
+    return sum + (quantity * price)
+  }, 0)
+})
+
 watch(
   () => [props.modelValue, props.order],
   () => {
@@ -273,6 +282,7 @@ const handleSubmit = async () => {
   try {
     const orderPayload = {
       ...form.value,
+      totalAmount: calculatedTotalAmount.value,
       items: form.value.items,
     }
 

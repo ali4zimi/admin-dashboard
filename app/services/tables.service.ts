@@ -16,6 +16,7 @@ import {
   query,
   orderBy,
   serverTimestamp,
+  deleteField,
 } from 'firebase/firestore'
 import { getFirestore } from './firebase'
 import type { Table, CreateTableData, UpdateTableData } from '~/types/table.types'
@@ -93,4 +94,40 @@ export const deleteTable = async (id: string): Promise<void> => {
   const firestore = getFirestore()
   const docRef = doc(firestore, COLLECTION_NAME, id)
   await deleteDoc(docRef)
+}
+
+/**
+ * Update multiple tables with occupied status and current order ID
+ */
+export const updateTablesForOrder = async (tableIds: string[], orderNumber: string): Promise<void> => {
+  const firestore = getFirestore()
+  
+  const updatePromises = tableIds.map(tableId => {
+    const docRef = doc(firestore, COLLECTION_NAME, tableId)
+    return updateDoc(docRef, {
+      status: 'occupied' as const,
+      currentOrderId: orderNumber,
+      updatedAt: serverTimestamp(),
+    })
+  })
+  
+  await Promise.all(updatePromises)
+}
+
+/**
+ * Release tables by setting status back to available
+ */
+export const releaseTablesForOrder = async (tableIds: string[]): Promise<void> => {
+  const firestore = getFirestore()
+  
+  const updatePromises = tableIds.map(tableId => {
+    const docRef = doc(firestore, COLLECTION_NAME, tableId)
+    return updateDoc(docRef, {
+      status: 'available' as const,
+      currentOrderId: deleteField(),
+      updatedAt: serverTimestamp(),
+    })
+  })
+  
+  await Promise.all(updatePromises)
 }

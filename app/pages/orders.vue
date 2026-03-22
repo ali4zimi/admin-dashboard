@@ -75,6 +75,7 @@
         <table class="min-w-full table-fixed divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
+              <th class="w-24 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Order #</th>
               <th class="w-28 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Table</th>
               <th class="w-24 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Type</th>
               <th class="w-28 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
@@ -85,6 +86,9 @@
           </thead>
           <tbody class="divide-y divide-gray-200 bg-white">
             <tr v-for="order in filteredOrders" :key="order.id" class="hover:bg-gray-50">
+              <td class="px-4 py-4 align-top">
+                <span class="text-sm font-medium text-blue-600">{{ order.orderNumber || 'N/A' }}</span>
+              </td>
               <td class="px-4 py-4 align-top">
                 <div class="flex items-center">
                   <span class="text-sm font-medium text-gray-900">{{ order.table?.name || 'N/A' }}</span>

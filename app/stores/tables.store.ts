@@ -211,6 +211,34 @@ export const useTablesStore = defineStore('tables', {
       this.lastFetched = null
       this.error = null
     },
+
+    // Update table status for order (internal, no logging)
+    updateTableStatusForOrder(tableId: string, status: TableStatus, orderNumber?: string) {
+      this.tables = this.tables.map(table =>
+        table.id === tableId
+          ? {
+              ...table,
+              status,
+              currentOrderId: status === 'occupied' ? orderNumber : undefined,
+            }
+          : table
+      )
+    },
+
+    // Update multiple table statuses for order (internal, no logging)
+    updateTableStatusesForOrder(tableIds: string[], status: TableStatus, orderNumber?: string) {
+      this.tables = this.tables.map(table => {
+        if (!tableIds.includes(table.id || '')) return table
+        
+        const updated = { ...table, status }
+        if (status === 'occupied' && orderNumber) {
+          updated.currentOrderId = orderNumber
+        } else if (status === 'available') {
+          updated.currentOrderId = undefined
+        }
+        return updated
+      })
+    },
   },
 })
 

@@ -8,6 +8,8 @@
 import { defineStore } from 'pinia'
 import * as OrdersService from '~/services/orders.service'
 import * as MenuService from '~/services/menu.service'
+import * as TablesService from '~/services/tables.service'
+import { useTablesStore } from '~/stores/tables.store'
 import type {
   CreateOrderData,
   Order,
@@ -110,6 +112,7 @@ export const useOrdersStore = defineStore('orders', {
       const { user } = useAuth()
       const { logActivity } = useActivityLog()
       const actorUser = user.value as any
+      const tablesStore = useTablesStore()
 
       this.loading = true
       this.error = null
@@ -117,13 +120,35 @@ export const useOrdersStore = defineStore('orders', {
       try {
         const itemsWithSnapshot = await this.buildItemsSnapshot(orderData.items)
 
+        // Generate order number based on current timestamp
+        const orderNumber = `ORD-${Date.now()}`
+
+        // Get table IDs for status updates
+        const tableIds = orderData.tableIds && orderData.tableIds.length > 0
+          ? orderData.tableIds
+          : (orderData.table?.id ? [orderData.table.id] : [])
+
+        // Update table status in Firebase and globally
+        if (tableIds.length > 0) {
+          try {
+            await TablesService.updateTablesForOrder(tableIds, orderNumber)
+            // Update global state
+            tablesStore.updateTableStatusesForOrder(tableIds, 'occupied', orderNumber)
+          } catch (error) {
+            console.error('Failed to update table status:', error)
+            // Continue with order creation even if table update fails
+          }
+        }
+
         const newOrder = await OrdersService.createOrder({
           table: orderData.table,
+          tableIds: orderData.tableIds,
           status: orderData.status,
           orderType: orderData.orderType,
           totalAmount: orderData.totalAmount,
           createdBy: actorUser?.uid || '',
           items: itemsWithSnapshot,
+          orderNumber,
         })
 
         this.orders = [newOrder, ...this.orders]
@@ -136,9 +161,9 @@ export const useOrdersStore = defineStore('orders', {
           targetId: newOrder.id || '',
           status: 'success',
           severity: 'info',
-          message: `Created order for table ${orderData.table?.name || ''}`,
+          message: `Created order ${orderNumber} for table ${orderData.table?.name || ''}`,
           changes: { before: null, after: { ...newOrder } },
-          metadata: { table: orderData.table?.name || '' },
+          metadata: { table: orderData.table?.name || '', orderNumber },
         })
 
         return newOrder
@@ -154,6 +179,7 @@ export const useOrdersStore = defineStore('orders', {
       const { user } = useAuth()
       const { logActivity } = useActivityLog()
       const actorUser = user.value as any
+      const tablesStore = useTablesStore()
 
       this.loading = true
       this.error = null
@@ -164,6 +190,47 @@ export const useOrdersStore = defineStore('orders', {
 
         if (orderData.items) {
           dataToUpdate.items = await this.buildItemsSnapshot(orderData.items as OrderItemInput[]) as any
+        }
+
+        // Handle table status updates if tables changed
+        if (beforeOrder && (orderData.tableIds || orderData.table)) {
+          const oldTableIds = beforeOrder.tableIds && beforeOrder.tableIds.length > 0
+            ? beforeOrder.tableIds
+            : (beforeOrder.table?.id ? [beforeOrder.table.id] : [])
+
+          const newTableIds = orderData.tableIds && orderData.tableIds.length > 0
+            ? orderData.tableIds
+            : (orderData.table?.id ? [orderData.table.id] : [])
+
+          // If tables changed, release old ones and occupy new ones
+          if (JSON.stringify(oldTableIds.sort()) !== JSON.stringify(newTableIds.sort())) {
+            // Release old tables
+            if (oldTableIds.length > 0) {
+              const tablesToRelease = oldTableIds.filter(id => !newTableIds.includes(id))
+              if (tablesToRelease.length > 0) {
+                try {
+                  await TablesService.releaseTablesForOrder(tablesToRelease)
+                  tablesStore.updateTableStatusesForOrder(tablesToRelease, 'available')
+                } catch (error) {
+                  console.error('Failed to release old tables:', error)
+                }
+              }
+            }
+
+            // Occupy new tables
+            if (newTableIds.length > 0) {
+              const tablesToOccupy = newTableIds.filter(id => !oldTableIds.includes(id))
+              if (tablesToOccupy.length > 0) {
+                try {
+                  const orderNumber = beforeOrder.orderNumber || `ORD-${Date.now()}`
+                  await TablesService.updateTablesForOrder(tablesToOccupy, orderNumber)
+                  tablesStore.updateTableStatusesForOrder(tablesToOccupy, 'occupied', orderNumber)
+                } catch (error) {
+                  console.error('Failed to occupy new tables:', error)
+                }
+              }
+            }
+          }
         }
 
         await OrdersService.updateOrder(id, dataToUpdate)
@@ -200,12 +267,31 @@ export const useOrdersStore = defineStore('orders', {
       const { user } = useAuth()
       const { logActivity } = useActivityLog()
       const actorUser = user.value as any
+      const tablesStore = useTablesStore()
 
       this.loading = true
       this.error = null
 
       try {
         const deletedOrder = this.orders.find((order) => order.id === id)
+
+        // Release tables when order is deleted
+        if (deletedOrder) {
+          const tableIds = deletedOrder.tableIds && deletedOrder.tableIds.length > 0
+            ? deletedOrder.tableIds
+            : (deletedOrder.table?.id ? [deletedOrder.table.id] : [])
+
+          if (tableIds.length > 0) {
+            try {
+              await TablesService.releaseTablesForOrder(tableIds)
+              // Update global state
+              tablesStore.updateTableStatusesForOrder(tableIds, 'available')
+            } catch (error) {
+              console.error('Failed to release table status:', error)
+              // Continue with order deletion even if table update fails
+            }
+          }
+        }
 
         await OrdersService.deleteOrder(id)
 
