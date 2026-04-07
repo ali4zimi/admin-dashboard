@@ -26,7 +26,7 @@
             <div
               v-for="(size, index) in form.sizes"
               :key="`size-${index}`"
-              class="grid grid-cols-[1fr_120px_auto] items-center gap-2"
+              class="grid grid-cols-[1fr_140px_auto] items-center gap-2"
             >
               <input
                 v-model="size.name"
@@ -34,14 +34,17 @@
                 placeholder="Size name (e.g. Small, Medium, Large)"
                 class="w-full rounded border px-3 py-2"
               />
-              <input
-                v-model.number="size.price"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="Price"
-                class="w-full rounded border px-3 py-2"
-              />
+              <div class="relative w-full">
+                <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-gray-500">{{ currencySymbol }}</span>
+                <input
+                  v-model.number="size.price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Price"
+                  class="w-full rounded border py-2 pl-8 pr-3"
+                />
+              </div>
               <button
                 type="button"
                 class="rounded border border-red-200 px-2 py-2 text-red-600 hover:bg-red-50"
@@ -58,7 +61,10 @@
 
           <div v-else>
             <label class="block mb-1 font-medium">Price</label>
-            <input v-model.number="form.price" type="number" min="0" step="0.01" required class="w-full rounded border px-3 py-2" />
+            <div class="relative">
+              <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-gray-500">{{ currencySymbol }}</span>
+              <input v-model.number="form.price" type="number" min="0" step="0.01" required class="w-full rounded border py-2 pl-8 pr-3" />
+            </div>
           </div>
         </div>
         <div>
@@ -115,9 +121,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { useMenu } from '~/composables/restaurant/useMenu'
 import { useFiles } from '~/composables/useFiles'
+import { useRestaurantSettings } from '~/composables/useRestaurantSettings'
 import type { FileData } from '~/types/file.types'
 import type { MenuItemSize } from '~/types/menu.types'
 import BaseModal from './BaseModal.vue'
@@ -128,6 +135,7 @@ const emit = defineEmits(['update:modelValue', 'saved'])
 
 const { menuCategories, createMenuItem, updateMenuItem, fetchMenuCategories } = useMenu()
 const { files, fetchFiles } = useFiles()
+const { currencyCode, locale, loadRestaurantSettings } = useRestaurantSettings()
 
 const loading = ref(false)
 const showImageUpload = ref(false)
@@ -141,6 +149,21 @@ const isOpen = computed({
 
 const isEditing = computed(() => !!props.menuItem?.id)
 const hasSizes = computed(() => form.value.sizes.length > 0)
+const currencySymbol = computed(() => {
+  try {
+    const parts = new Intl.NumberFormat(locale.value, {
+      style: 'currency',
+      currency: currencyCode.value || 'EUR',
+      currencyDisplay: 'narrowSymbol',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).formatToParts(0)
+
+    return parts.find((part) => part.type === 'currency')?.value || currencyCode.value || 'EUR'
+  } catch {
+    return currencyCode.value || 'EUR'
+  }
+})
 
 const form = ref({
   name: '',
@@ -266,4 +289,7 @@ const handleSubmit = async () => {
 }
 
 fetchMenuCategories()
+onMounted(() => {
+  loadRestaurantSettings()
+})
 </script>
