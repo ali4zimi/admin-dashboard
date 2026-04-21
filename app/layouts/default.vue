@@ -140,6 +140,10 @@
               Tables
             </NuxtLink>
           </li>
+
+          <li class="border-t border-gray-700 pt-4">
+            <span class="px-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Configuration</span>
+          </li>
           <li>
             <NuxtLink
               to="/restaurant-settings"
