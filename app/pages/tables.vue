@@ -1,44 +1,66 @@
 <template>
   <div>
     <!-- Page header -->
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">Table Management</h1>
-        <p class="text-gray-600">Manage restaurant tables and their statuses.</p>
-      </div>
-      <div class="flex gap-2">
-        <button
-          class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-          @click="openAddModal"
-        >
-          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Add Table
-        </button>
-      </div>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-gray-900">Tables</h1>
+      <p class="text-gray-600">Real-time table status and floor overview.</p>
     </div>
 
-    <!-- Filter/Search -->
-    <div class="mb-6 flex flex-col gap-4 rounded-lg bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-      <div class="flex flex-1 gap-2">
-        <input
-          v-model="searchTerm"
-          type="text"
-          placeholder="Search tables..."
-          class="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        />
-        <select
-          v-model="filterStatus"
-          class="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+    <!-- Status summary + Add button -->
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex flex-wrap items-center gap-4 text-sm">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-full px-2 py-1 transition-colors"
+          :class="filterStatus === 'available' ? 'bg-green-100' : 'hover:bg-gray-100'"
+          @click="toggleFilter('available')"
         >
-          <option value="">All Statuses</option>
-          <option value="available">Available</option>
-          <option value="occupied">Occupied</option>
-          <option value="reserved">Reserved</option>
-          <option value="blocked">Blocked</option>
-        </select>
+          <span class="h-2.5 w-2.5 rounded-full bg-green-500"></span>
+          <span class="text-gray-700">Available</span>
+          <span class="font-semibold text-gray-900">({{ statusCounts.available }})</span>
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-full px-2 py-1 transition-colors"
+          :class="filterStatus === 'occupied' ? 'bg-orange-100' : 'hover:bg-gray-100'"
+          @click="toggleFilter('occupied')"
+        >
+          <span class="h-2.5 w-2.5 rounded-full bg-orange-500"></span>
+          <span class="text-gray-700">Occupied</span>
+          <span class="font-semibold text-gray-900">({{ statusCounts.occupied }})</span>
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-full px-2 py-1 transition-colors"
+          :class="filterStatus === 'reserved' ? 'bg-blue-100' : 'hover:bg-gray-100'"
+          @click="toggleFilter('reserved')"
+        >
+          <span class="h-2.5 w-2.5 rounded-full bg-blue-500"></span>
+          <span class="text-gray-700">Reserved</span>
+          <span class="font-semibold text-gray-900">({{ statusCounts.reserved }})</span>
+        </button>
+        <button
+          v-if="statusCounts.blocked > 0"
+          type="button"
+          class="inline-flex items-center gap-2 rounded-full px-2 py-1 transition-colors"
+          :class="filterStatus === 'blocked' ? 'bg-red-100' : 'hover:bg-gray-100'"
+          @click="toggleFilter('blocked')"
+        >
+          <span class="h-2.5 w-2.5 rounded-full bg-red-500"></span>
+          <span class="text-gray-700">Blocked</span>
+          <span class="font-semibold text-gray-900">({{ statusCounts.blocked }})</span>
+        </button>
       </div>
+
+      <button
+        class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+        @click="openAddModal"
+      >
+        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Add Table
+      </button>
     </div>
 
     <!-- Loading state -->
@@ -60,7 +82,7 @@
       <p class="mb-4 text-sm text-gray-500">Add your first table to get started.</p>
       <button
         class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-        @click="showTableModal = true"
+        @click="openAddModal"
       >
         <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -70,15 +92,23 @@
     </div>
 
     <!-- Table grid view -->
-    <div v-else class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+    <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <div
         v-for="table in filteredTables"
         :key="table.id"
-        class="group relative pt-4 cursor-pointer overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md"
+        class="group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition-shadow hover:shadow-md"
+        :class="cardClass(table.status)"
       >
-        <div class="absolute right-2 top-2 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <!-- Status dot (top right) -->
+        <span
+          class="absolute right-4 top-4 h-2.5 w-2.5 rounded-full"
+          :class="statusDotClass(table.status)"
+        ></span>
+
+        <!-- Hover actions -->
+        <div class="absolute right-3 top-8 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           <button
-            class="inline-flex h-7 w-7 items-center justify-center rounded bg-blue-50 text-blue-600 hover:bg-blue-100"
+            class="inline-flex h-7 w-7 items-center justify-center rounded bg-white/80 text-gray-600 shadow-sm hover:bg-white hover:text-blue-600"
             @click="openEditModal(table)"
             aria-label="Edit table"
             title="Edit"
@@ -88,7 +118,7 @@
             </svg>
           </button>
           <button
-            class="inline-flex h-7 w-7 items-center justify-center rounded bg-red-50 text-red-600 hover:bg-red-100"
+            class="inline-flex h-7 w-7 items-center justify-center rounded bg-white/80 text-gray-600 shadow-sm hover:bg-white hover:text-red-600"
             @click="openDeleteModal(table)"
             aria-label="Delete table"
             title="Delete"
@@ -99,26 +129,36 @@
           </button>
         </div>
 
-        <div class="p-3">
-          <p class="truncate text-sm font-medium text-gray-900">{{ table.name }}</p>
-          <div class="mt-1 flex items-center justify-between text-xs text-gray-500">
-            <span>Capacity: {{ table.capacity }}</span>
-            <span :class="['inline-flex items-center rounded px-2 py-0.5 font-semibold', statusColorClass(table.status)]">
-              <span class="w-2 h-2 rounded-full mr-1" :class="statusDotClass(table.status)"></span>
-              {{ table.status.charAt(0).toUpperCase() + table.status.slice(1) }}
-            </span>
-          </div>
+        <!-- Card content -->
+        <h3 class="pr-6 text-lg font-bold text-gray-900">{{ table.name }}</h3>
+        <p class="mt-1 text-sm text-gray-500">{{ table.capacity }} {{ table.capacity === 1 ? 'seat' : 'seats' }}</p>
+
+        <!-- Order chip (occupied) -->
+        <div
+          v-if="table.status === 'occupied' && orderLabel(table)"
+          class="mt-4 flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-sm text-gray-700"
+        >
+          <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span class="font-medium">{{ orderLabel(table) }}</span>
+        </div>
+
+        <!-- Reservation chip (reserved) -->
+        <div
+          v-if="table.status === 'reserved' && reservationLabel(table)"
+          class="mt-4 flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-sm text-gray-700"
+        >
+          <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span class="font-medium">{{ reservationLabel(table) }}</span>
         </div>
       </div>
     </div>
 
-    <!-- Results info -->
-    <div v-if="filteredTables.length > 0" class="mt-6 text-center">
-      <p class="text-sm text-gray-500">Showing {{ filteredTables.length }} tables</p>
-    </div>
-
     <!-- Table Modal -->
-     <TableFormModal
+    <TableFormModal
       v-model="showTableModal"
       :table="editingTable"
       @saved="handleTableCreated"
@@ -136,12 +176,14 @@
 
 <script setup lang="ts">
 import { useTables } from '~/composables/restaurant/useTables'
+import { useOrders } from '~/composables/restaurant/useOrders'
+import { useReservations } from '~/composables/restaurant/useReservations'
 import DeleteConfirmModal from '~/components/DeleteConfirmModal.vue'
-
 import TableFormModal from '~/components/TableFormModal.vue'
+import type { Table, TableStatus } from '~/types/table.types'
 
 useHead({
-  title: 'Table Management - Admin Panel'
+  title: 'Tables - Admin Panel'
 })
 
 const {
@@ -151,81 +193,113 @@ const {
   deleteTable,
 } = useTables()
 
-const searchTerm = ref('')
-const filterStatus = ref('')
+const { orders, fetchOrders, getOrderById } = useOrders()
+const { reservations, fetchReservations, getReservationById } = useReservations()
+
+const filterStatus = ref<TableStatus | ''>('')
 const showTableModal = ref(false)
 const showDeleteModal = ref(false)
-const tableToDelete = ref<any | null>(null)
-const editingTable = ref<any | null>(null)
+const tableToDelete = ref<Table | null>(null)
+const editingTable = ref<Table | null>(null)
 
-const filteredTables = computed(() => {
-  let items = tables.value
-  if (searchTerm.value) {
-    const lowerTerm = searchTerm.value.toLowerCase()
-    items = items.filter(table =>
-      table.name.toLowerCase().includes(lowerTerm)
-    )
+const statusCounts = computed(() => {
+  const counts = { available: 0, occupied: 0, reserved: 0, blocked: 0 }
+  for (const t of tables.value) {
+    if (t.status in counts) counts[t.status as keyof typeof counts]++
   }
-  if (filterStatus.value) {
-    items = items.filter(table => table.status === filterStatus.value)
-  }
-  return items
+  return counts
 })
 
-const openDeleteModal = (table: any) => {
+const filteredTables = computed(() => {
+  if (!filterStatus.value) return tables.value
+  return tables.value.filter(t => t.status === filterStatus.value)
+})
+
+const toggleFilter = (status: TableStatus) => {
+  filterStatus.value = filterStatus.value === status ? '' : status
+}
+
+const openDeleteModal = (table: Table) => {
   tableToDelete.value = table
   showDeleteModal.value = true
 }
-const openEditModal = (table: any) => {
+const openEditModal = (table: Table) => {
   editingTable.value = { ...table }
   showTableModal.value = true
 }
-
 const openAddModal = () => {
   editingTable.value = null
   showTableModal.value = true
 }
 const handleTableDeleted = async () => {
-  if (tableToDelete.value) {
+  if (tableToDelete.value?.id) {
     await deleteTable(tableToDelete.value.id)
-    // No need to fetch - store updates local cache automatically
   }
   tableToDelete.value = null
 }
-const handleTableCreated = async () => {
-  // No need to fetch - store updates local cache automatically
-}
+const handleTableCreated = async () => {}
+
 onMounted(async () => {
-  await fetchTables()
+  await Promise.all([
+    fetchTables(),
+    fetchOrders(),
+    fetchReservations(),
+  ])
 })
 
-// Status color helpers
-function statusColorClass(status: string) {
+// Labels for order / reservation chips
+const orderLabel = (table: Table): string | null => {
+  if (!table.currentOrderId) return null
+  const order = getOrderById(table.currentOrderId) || orders.value.find(o => o.id === table.currentOrderId)
+  if (!order) return `#${table.currentOrderId.slice(0, 6).toUpperCase()}`
+  return order.orderNumber ? `#${order.orderNumber}` : `#${(order.id || '').slice(0, 6).toUpperCase()}`
+}
+
+const reservationLabel = (table: Table): string | null => {
+  if (!table.currentReservationId) return null
+  const res = getReservationById(table.currentReservationId) || reservations.value.find(r => r.id === table.currentReservationId)
+  if (!res) return null
+  return `${res.customerName}, ${formatReservationTime(res.startTime)}`
+}
+
+function formatReservationTime(value: any): string {
+  if (!value) return ''
+  let date: Date
+  if (value?.toDate) date = value.toDate()
+  else if (value instanceof Date) date = value
+  else date = new Date(value)
+  if (isNaN(date.getTime())) return ''
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+}
+
+// Card / status styling
+function cardClass(status: string) {
   switch (status) {
     case 'available':
-      return 'bg-green-100 text-green-700';
+      return 'border-green-300 bg-green-50'
     case 'occupied':
-      return 'bg-yellow-100 text-yellow-700';
+      return 'border-orange-300 bg-orange-50'
     case 'reserved':
-      return 'bg-blue-100 text-blue-700';
+      return 'border-blue-300 bg-blue-50'
     case 'blocked':
-      return 'bg-red-100 text-red-700';
+      return 'border-red-300 bg-red-50'
     default:
-      return 'bg-gray-100 text-gray-700';
+      return 'border-gray-200 bg-white'
   }
 }
+
 function statusDotClass(status: string) {
   switch (status) {
     case 'available':
-      return 'bg-green-500';
+      return 'bg-green-500'
     case 'occupied':
-      return 'bg-yellow-500';
+      return 'bg-orange-500'
     case 'reserved':
-      return 'bg-blue-500';
+      return 'bg-blue-500'
     case 'blocked':
-      return 'bg-red-500';
+      return 'bg-red-500'
     default:
-      return 'bg-gray-400';
+      return 'bg-gray-400'
   }
 }
 </script>
