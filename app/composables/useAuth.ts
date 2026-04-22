@@ -9,13 +9,12 @@ import {
 } from 'firebase/auth'
 
 import { useActivityLog } from '~/composables/useActivityLog'
-import { collection, setDoc, doc, serverTimestamp } from 'firebase/firestore'
 import * as UsersService from '~/services/users.service'
 import type { UserData } from '~/types/user.types'
 
 export const useAuth = () => {
 
-  const { auth, firestore } = useFirebase()
+  const { auth } = useFirebase()
   const { logActivity } = useActivityLog()
   const user = useState<User | null>('auth-user', () => null)
   const currentUserProfile = useState<UserData | null>('auth-user-profile', () => null)
@@ -109,22 +108,16 @@ export const useAuth = () => {
 
       user.value = result.user
 
-      // Store user data in Firestore
-      if (firestore && result.user) {
-        try {
-          await setDoc(doc(firestore, 'users', result.user.uid), {
-            uid: result.user.uid,
-            email: result.user.email,
-            name: result.user.displayName || '',
-            role: 'user', // Default role
-            status: 'inactive', // Admin must activate
-            joined: serverTimestamp(),
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          })
-        } catch (err) {
-          console.error('Error saving user to Firestore:', err)
-        }
+      try {
+        await UsersService.createUser({
+          uid: result.user.uid,
+          email: result.user.email || '',
+          name: result.user.displayName || '',
+          role: 'user',
+          status: 'inactive',
+        })
+      } catch (err) {
+        console.error('Error saving user to Firestore:', err)
       }
 
       // Log register activity

@@ -5,6 +5,7 @@ export type UserStatus = 'active' | 'inactive'
 
 export interface UserData {
   id?: string
+  uid?: string
   name: string
   email: string
   role: UserRole
