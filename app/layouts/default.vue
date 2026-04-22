@@ -69,24 +69,7 @@
           </li>
 
           <li class="border-t border-gray-700 pt-4">
-            <span class="px-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Booking</span>
-          </li>
-          <li>
-            <NuxtLink
-              to="/bookings"
-              class="flex items-center rounded-lg px-4 py-3 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
-              active-class="bg-gray-800 text-white"
-              @click="closeSidebarOnMobile"
-            >
-              <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              Bookings
-            </NuxtLink>
-          </li>
-
-          <li class="border-t border-gray-700 pt-4">
-            <span class="px-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Restaurant</span>
+            <span class="px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Restaurant</span>
           </li>
           <li>
             <NuxtLink
@@ -141,8 +124,8 @@
             </NuxtLink>
           </li>
 
-          <li class="border-t border-gray-700 pt-4">
-            <span class="px-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Configuration</span>
+          <li class="border-gray-700 pt-4">
+            <span class="px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Configuration</span>
           </li>
           <li>
             <NuxtLink
