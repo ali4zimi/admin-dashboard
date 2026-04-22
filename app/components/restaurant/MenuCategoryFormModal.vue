@@ -91,8 +91,8 @@ import { ref, watch, computed } from 'vue'
 import { useMenu } from '~/composables/restaurant/useMenu'
 import { useFiles } from '~/composables/useFiles'
 import type { FileData } from '~/types/file.types'
-import BaseModal from './BaseModal.vue'
-import FileUploadModal from './FileUploadModal.vue'
+import BaseModal from '../BaseModal.vue'
+import FileUploadModal from '../FileUploadModal.vue'
 
 const props = defineProps<{ modelValue: boolean, category?: any }>()
 const emit = defineEmits(['update:modelValue', 'saved'])

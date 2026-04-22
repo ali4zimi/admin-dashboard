@@ -179,7 +179,7 @@ import { useTables } from '~/composables/restaurant/useTables'
 import { useOrders } from '~/composables/restaurant/useOrders'
 import { useReservations } from '~/composables/restaurant/useReservations'
 import DeleteConfirmModal from '~/components/DeleteConfirmModal.vue'
-import TableFormModal from '~/components/TableFormModal.vue'
+import TableFormModal from '~/components/restaurant/TableFormModal.vue'
 import type { Table, TableStatus } from '~/types/table.types'
 
 useHead({

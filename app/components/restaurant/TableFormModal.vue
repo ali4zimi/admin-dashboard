@@ -45,7 +45,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useTables } from '~/composables/restaurant/useTables'
-import BaseModal from './BaseModal.vue'
+import BaseModal from '../BaseModal.vue'
 
 const props = defineProps<{ modelValue: boolean, table?: any }>()
 const emit = defineEmits(['update:modelValue', 'saved'])

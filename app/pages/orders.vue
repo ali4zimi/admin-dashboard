@@ -171,7 +171,7 @@
 import { useOrders } from '~/composables/restaurant/useOrders'
 import { useRestaurantSettings } from '~/composables/useRestaurantSettings'
 import DeleteConfirmModal from '~/components/DeleteConfirmModal.vue'
-import OrderFormModal from '~/components/OrderFormModal.vue'
+import OrderFormModal from '~/components/restaurant/OrderFormModal.vue'
 
 useHead({
   title: 'Order Management - Admin Panel'

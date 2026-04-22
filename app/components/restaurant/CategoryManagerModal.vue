@@ -34,7 +34,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import BaseModal from '~/components/BaseModal.vue'
-import MenuCategoryFormModal from '~/components/MenuCategoryFormModal.vue'
+import MenuCategoryFormModal from '~/components/restaurant/MenuCategoryFormModal.vue'
 import DeleteConfirmModal from '~/components/DeleteConfirmModal.vue'
 import { useMenu } from '~/composables/restaurant/useMenu'
 

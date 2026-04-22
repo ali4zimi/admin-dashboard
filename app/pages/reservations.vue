@@ -197,7 +197,7 @@
 import { useReservations } from '~/composables/restaurant/useReservations'
 import { useTables } from '~/composables/restaurant/useTables'
 import DeleteConfirmModal from '~/components/DeleteConfirmModal.vue'
-import ReservationFormModal from '~/components/ReservationFormModal.vue'
+import ReservationFormModal from '~/components/restaurant/ReservationFormModal.vue'
 import type { Reservation, ReservationStatus } from '~/types/reservation.types'
 
 useHead({

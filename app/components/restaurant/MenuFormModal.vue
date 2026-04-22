@@ -127,8 +127,8 @@ import { useFiles } from '~/composables/useFiles'
 import { useRestaurantSettings } from '~/composables/useRestaurantSettings'
 import type { FileData } from '~/types/file.types'
 import type { MenuItemSize } from '~/types/menu.types'
-import BaseModal from './BaseModal.vue'
-import FileUploadModal from './FileUploadModal.vue'
+import BaseModal from '../BaseModal.vue'
+import FileUploadModal from '../FileUploadModal.vue'
 
 const props = defineProps<{ modelValue: boolean, menuItem?: any }>()
 const emit = defineEmits(['update:modelValue', 'saved'])
