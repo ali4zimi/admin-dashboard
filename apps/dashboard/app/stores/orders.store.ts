@@ -2,7 +2,6 @@
  * Orders Store - Global state management for orders
  *
  * Uses OrdersService for Firebase operations.
- * Handles caching, activity logging, and state management.
  */
 
 import { defineStore } from 'pinia'
@@ -110,7 +109,6 @@ export const useOrdersStore = defineStore('orders', {
 
     async createOrder(orderData: CreateOrderData) {
       const { user } = useAuth()
-      const { logActivity } = useActivityLog()
       const actorUser = user.value as any
       const tablesStore = useTablesStore()
 
@@ -153,19 +151,6 @@ export const useOrdersStore = defineStore('orders', {
 
         this.orders = [newOrder, ...this.orders]
 
-        await logActivity({
-          action: 'order.create',
-          actorId: actorUser?.uid || '',
-          actorType: actorUser?.role || 'user',
-          targetType: 'order',
-          targetId: newOrder.id || '',
-          status: 'success',
-          severity: 'info',
-          message: `Created order ${orderNumber} for table ${orderData.table?.name || ''}`,
-          changes: { before: null, after: { ...newOrder } },
-          metadata: { table: orderData.table?.name || '', orderNumber },
-        })
-
         return newOrder
       } catch (e: any) {
         this.error = e.message || 'Failed to create order'
@@ -176,9 +161,6 @@ export const useOrdersStore = defineStore('orders', {
     },
 
     async updateOrder(id: string, orderData: UpdateOrderData) {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const actorUser = user.value as any
       const tablesStore = useTablesStore()
 
       this.loading = true
@@ -239,21 +221,6 @@ export const useOrdersStore = defineStore('orders', {
           order.id === id ? { ...order, ...dataToUpdate } : order
         )
 
-        const afterOrder = this.orders.find((order) => order.id === id)
-
-        await logActivity({
-          action: 'order.update',
-          actorId: actorUser?.uid || '',
-          actorType: actorUser?.role || 'user',
-          targetType: 'order',
-          targetId: id,
-          status: 'success',
-          severity: 'info',
-          message: `Updated order for table ${orderData.table?.name || afterOrder?.table?.name || ''}`,
-          changes: { before: beforeOrder, after: afterOrder },
-          metadata: { table: orderData.table?.name || afterOrder?.table?.name || '' },
-        })
-
         return { id, ...orderData }
       } catch (e: any) {
         this.error = e.message || 'Failed to update order'
@@ -264,9 +231,6 @@ export const useOrdersStore = defineStore('orders', {
     },
 
     async deleteOrder(id: string) {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const actorUser = user.value as any
       const tablesStore = useTablesStore()
 
       this.loading = true
@@ -294,19 +258,6 @@ export const useOrdersStore = defineStore('orders', {
         }
 
         await OrdersService.deleteOrder(id)
-
-        await logActivity({
-          action: 'order.delete',
-          actorId: actorUser?.uid || '',
-          actorType: actorUser?.role || 'user',
-          targetType: 'order',
-          targetId: id,
-          status: 'success',
-          severity: 'info',
-          message: `Deleted order for table ${deletedOrder?.table?.name || ''}`,
-          changes: { before: deletedOrder, after: null },
-          metadata: { table: deletedOrder?.table?.name || '' },
-        })
 
         this.orders = this.orders.filter((order) => order.id !== id)
         return true

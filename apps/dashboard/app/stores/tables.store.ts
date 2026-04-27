@@ -1,8 +1,7 @@
 /**
  * Tables Store - Global state management for tables
- * 
+ *
  * Uses TablesService for Firebase operations.
- * Handles caching, activity logging, and state management.
  */
 
 import { defineStore } from 'pinia'
@@ -82,32 +81,13 @@ export const useTablesStore = defineStore('tables', {
     },
 
     async createTable(tableData: CreateTableData) {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const userData = user.value as any
-
       this.loading = true
       this.error = null
 
       try {
         const newTable = await TablesService.createTable(tableData)
-        
-        // Update local cache
-        this.tables = [newTable, ...this.tables]
 
-        // Log activity
-        await logActivity({
-          action: 'table.create',
-          actorId: userData?.uid || '',
-          actorType: userData?.role || 'user',
-          targetType: 'table',
-          targetId: newTable.id!,
-          status: 'success',
-          severity: 'info',
-          message: `Created table "${tableData.name}"`,
-          changes: { before: null, after: { ...newTable } },
-          metadata: { name: tableData.name },
-        })
+        this.tables = [newTable, ...this.tables]
 
         return newTable
       } catch (e: any) {
@@ -119,38 +99,15 @@ export const useTablesStore = defineStore('tables', {
     },
 
     async updateTable(id: string, tableData: UpdateTableData) {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const userData = user.value as any
-
       this.loading = true
       this.error = null
 
       try {
-        const beforeTable = this.tables.find(table => table.id === id)
-        
         await TablesService.updateTable(id, tableData)
-        
-        // Update local cache
-        this.tables = this.tables.map(table => 
+
+        this.tables = this.tables.map(table =>
           table.id === id ? { ...table, ...tableData } : table
         )
-
-        const afterTable = this.tables.find(table => table.id === id)
-
-        // Log activity
-        await logActivity({
-          action: 'table.update',
-          actorId: userData?.uid || '',
-          actorType: userData?.role || 'user',
-          targetType: 'table',
-          targetId: id,
-          status: 'success',
-          severity: 'info',
-          message: `Updated table "${tableData.name || afterTable?.name || ''}"`,
-          changes: { before: beforeTable, after: afterTable },
-          metadata: { name: tableData.name || afterTable?.name || '' },
-        })
 
         return { id, ...tableData }
       } catch (e: any) {
@@ -162,33 +119,12 @@ export const useTablesStore = defineStore('tables', {
     },
 
     async deleteTable(id: string) {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const userData = user.value as any
-
       this.loading = true
       this.error = null
 
       try {
-        const deletedTable = this.tables.find(table => table.id === id)
-        
         await TablesService.deleteTable(id)
 
-        // Log activity
-        await logActivity({
-          action: 'table.delete',
-          actorId: userData?.uid || '',
-          actorType: userData?.role || 'user',
-          targetType: 'table',
-          targetId: id,
-          status: 'success',
-          severity: 'info',
-          message: `Deleted table "${deletedTable?.name || ''}"`,
-          changes: { before: deletedTable, after: null },
-          metadata: { name: deletedTable?.name || '' },
-        })
-
-        // Update local cache
         this.tables = this.tables.filter(table => table.id !== id)
 
         return true

@@ -2,7 +2,6 @@
  * Users Store - Global state management for users
  *
  * Uses UsersService for Firebase operations.
- * Handles caching, activity logging, and state management.
  */
 
 import { defineStore } from 'pinia'
@@ -119,10 +118,6 @@ export const useUsersStore = defineStore('users', {
     async createUser(userData: CreateUserData) {
       this.ensureAdmin()
 
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const actorUser = user.value as any
-
       this.loading = true
       this.error = null
 
@@ -130,23 +125,6 @@ export const useUsersStore = defineStore('users', {
         const newUser = await UsersService.createUser(userData)
 
         this.users = [newUser, ...this.users]
-
-        await logActivity({
-          action: 'user.create',
-          actorId: actorUser?.uid || newUser.id || '',
-          actorType: actorUser?.role || 'user',
-          targetType: 'user',
-          targetId: newUser.id || '',
-          status: 'success',
-          severity: 'info',
-          message: `User ${userData.name} created`,
-          changes: { before: null, after: { ...newUser } },
-          metadata: {
-            name: userData.name,
-            email: userData.email,
-            role: userData.role,
-          },
-        })
 
         return newUser
       } catch (e: any) {
@@ -160,10 +138,7 @@ export const useUsersStore = defineStore('users', {
     async updateUser(id: string, userData: UpdateUserData) {
       this.ensureAdmin()
 
-      const { user } = useAuth()
       const { currentUserProfile } = useAuth()
-      const { logActivity } = useActivityLog()
-      const actorUser = user.value as any
 
       this.loading = true
       this.error = null
@@ -188,25 +163,6 @@ export const useUsersStore = defineStore('users', {
           existingUser.id === id ? { ...existingUser, ...userData } : existingUser
         )
 
-        const afterUser = this.users.find((u) => u.id === id)
-
-        await logActivity({
-          action: 'user.update',
-          actorId: actorUser?.uid || id,
-          actorType: actorUser?.role || 'user',
-          targetType: 'user',
-          targetId: id,
-          status: 'success',
-          severity: 'info',
-          message: `User ${userData.name || afterUser?.name || ''} updated`,
-          changes: { before: beforeUser, after: afterUser },
-          metadata: {
-            name: userData.name || afterUser?.name || '',
-            email: userData.email || afterUser?.email || '',
-            role: userData.role || afterUser?.role || '',
-          },
-        })
-
         return { id, ...userData }
       } catch (e: any) {
         this.error = e.message || 'Failed to update user'
@@ -219,39 +175,17 @@ export const useUsersStore = defineStore('users', {
     async deleteUser(id: string) {
       this.ensureAdmin()
 
-      const { user } = useAuth()
       const { currentUserProfile } = useAuth()
-      const { logActivity } = useActivityLog()
-      const actorUser = user.value as any
 
       this.loading = true
       this.error = null
 
       try {
-        const deletedUser = this.users.find((u) => u.id === id)
-
         if (currentUserProfile.value?.id === id) {
           throw new Error('Admins cannot delete themselves')
         }
 
         await UsersService.deleteUser(id)
-
-        await logActivity({
-          action: 'user.delete',
-          actorId: actorUser?.uid || id,
-          actorType: actorUser?.role || 'user',
-          targetType: 'user',
-          targetId: id,
-          status: 'success',
-          severity: 'info',
-          message: `User ${deletedUser?.name || ''} deleted`,
-          changes: { before: deletedUser, after: null },
-          metadata: {
-            name: deletedUser?.name || '',
-            email: deletedUser?.email || '',
-            role: deletedUser?.role || '',
-          },
-        })
 
         this.users = this.users.filter((existingUser) => existingUser.id !== id)
 

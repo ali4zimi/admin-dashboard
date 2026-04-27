@@ -2,7 +2,7 @@
  * Files Store - Global state management for files
  *
  * Uses FilesService for Firebase operations.
- * Handles uploading, metadata, activity logging, and state management.
+ * Handles uploading, metadata, and state management.
  */
 
 import { defineStore } from 'pinia'
@@ -130,10 +130,6 @@ export const useFilesStore = defineStore('files', {
     },
 
     async uploadFiles(fileList: FileList | File[], path = 'uploads') {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const actorUser = user.value as any
-
       if (!fileList || fileList.length === 0) {
         return []
       }
@@ -190,23 +186,6 @@ export const useFilesStore = defineStore('files', {
             progressItem.status = 'completed'
             progressItem.progress = 100
 
-            await logActivity({
-              action: 'file.upload',
-              actorId: actorUser?.uid || '',
-              actorType: actorUser?.role || 'user',
-              targetType: 'file',
-              targetId: newFile.fullPath,
-              status: 'success',
-              severity: 'info',
-              message: `${actorUser?.displayName || actorUser?.email || 'User'} uploaded file "${newFile.name}"`,
-              changes: { before: null, after: { ...newFile } },
-              metadata: {
-                fileName: newFile.name,
-                fileType: newFile.type,
-                fileSize: newFile.size,
-              },
-            })
-
             return newFile
           } catch (err: any) {
             progressItem.status = 'error'
@@ -227,10 +206,6 @@ export const useFilesStore = defineStore('files', {
     },
 
     async deleteFile(file: FileData) {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const actorUser = user.value as any
-
       this.error = null
 
       try {
@@ -240,23 +215,6 @@ export const useFilesStore = defineStore('files', {
 
         this.files = this.files.filter((existingFile) => existingFile.fullPath !== file.fullPath)
         this.recalculateStats()
-
-        await logActivity({
-          action: 'file.delete',
-          actorId: actorUser?.uid || '',
-          actorType: actorUser?.role || 'user',
-          targetType: 'file',
-          targetId: file.fullPath,
-          status: 'success',
-          severity: 'info',
-          message: `${actorUser?.displayName || actorUser?.email || 'User'} deleted file "${file.name}"`,
-          changes: { before: file, after: null },
-          metadata: {
-            fileName: file.name,
-            fileType: file.type,
-            fileSize: file.size,
-          },
-        })
 
         return true
       } catch (e: any) {

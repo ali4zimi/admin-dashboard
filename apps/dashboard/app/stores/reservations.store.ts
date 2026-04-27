@@ -2,7 +2,6 @@
  * Reservations Store - Global state management for reservations
  *
  * Uses ReservationsService for Firebase operations.
- * Handles caching, activity logging, and state management.
  */
 
 import { defineStore } from 'pinia'
@@ -77,7 +76,6 @@ export const useReservationsStore = defineStore('reservations', {
 
     async createReservation(reservationData: CreateReservationData) {
       const { user } = useAuth()
-      const { logActivity } = useActivityLog()
       const actorUser = user.value as any
 
       this.loading = true
@@ -91,19 +89,6 @@ export const useReservationsStore = defineStore('reservations', {
 
         this.reservations = [newReservation, ...this.reservations]
 
-        await logActivity({
-          action: 'reservation.create',
-          actorId: actorUser?.uid || '',
-          actorType: actorUser?.role || 'user',
-          targetType: 'reservation',
-          targetId: newReservation.id || '',
-          status: 'success',
-          severity: 'info',
-          message: `Created reservation for ${reservationData.customerName}`,
-          changes: { before: null, after: { ...newReservation } },
-          metadata: { customerName: reservationData.customerName },
-        })
-
         return newReservation
       } catch (e: any) {
         this.error = e.message || 'Failed to create reservation'
@@ -114,36 +99,15 @@ export const useReservationsStore = defineStore('reservations', {
     },
 
     async updateReservation(id: string, reservationData: UpdateReservationData) {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const actorUser = user.value as any
-
       this.loading = true
       this.error = null
 
       try {
-        const beforeReservation = this.reservations.find((reservation) => reservation.id === id)
-
         await ReservationsService.updateReservation(id, reservationData)
 
         this.reservations = this.reservations.map((reservation) =>
           reservation.id === id ? { ...reservation, ...reservationData } : reservation
         )
-
-        const afterReservation = this.reservations.find((reservation) => reservation.id === id)
-
-        await logActivity({
-          action: 'reservation.update',
-          actorId: actorUser?.uid || '',
-          actorType: actorUser?.role || 'user',
-          targetType: 'reservation',
-          targetId: id,
-          status: 'success',
-          severity: 'info',
-          message: `Updated reservation for ${reservationData.customerName || afterReservation?.customerName || ''}`,
-          changes: { before: beforeReservation, after: afterReservation },
-          metadata: { customerName: reservationData.customerName || afterReservation?.customerName || '' },
-        })
 
         return { id, ...reservationData }
       } catch (e: any) {
@@ -155,30 +119,11 @@ export const useReservationsStore = defineStore('reservations', {
     },
 
     async deleteReservation(id: string) {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const actorUser = user.value as any
-
       this.loading = true
       this.error = null
 
       try {
-        const deletedReservation = this.reservations.find((reservation) => reservation.id === id)
-
         await ReservationsService.deleteReservation(id)
-
-        await logActivity({
-          action: 'reservation.delete',
-          actorId: actorUser?.uid || '',
-          actorType: actorUser?.role || 'user',
-          targetType: 'reservation',
-          targetId: id,
-          status: 'success',
-          severity: 'info',
-          message: `Deleted reservation for ${deletedReservation?.customerName || ''}`,
-          changes: { before: deletedReservation, after: null },
-          metadata: { customerName: deletedReservation?.customerName || '' },
-        })
 
         this.reservations = this.reservations.filter((reservation) => reservation.id !== id)
 

@@ -8,14 +8,12 @@ import {
   type User,
 } from 'firebase/auth'
 
-import { useActivityLog } from '~/composables/useActivityLog'
 import * as UsersService from '~/services/users.service'
 import type { UserData } from '~/types/user.types'
 
 export const useAuth = () => {
 
   const { auth } = useFirebase()
-  const { logActivity } = useActivityLog()
   const user = useState<User | null>('auth-user', () => null)
   const currentUserProfile = useState<UserData | null>('auth-user-profile', () => null)
   const authLoading = useState<boolean>('auth-loading', () => true)
@@ -74,20 +72,6 @@ export const useAuth = () => {
       }
 
       user.value = result.user
-      // Log login activity
-      await logActivity({
-        action: 'auth.login',
-        actorId: result.user.uid,
-        actorType: 'user',
-        targetType: 'auth',
-        targetId: result.user.uid,
-        status: 'success',
-        severity: 'info',
-        message: `${result.user.displayName || result.user.email || 'User'} logged in`,
-        metadata: {
-          email: result.user.email,
-        },
-      })
       return result.user
     } catch (e: any) {
       error.value = getAuthErrorMessage(e.code)
@@ -120,20 +104,6 @@ export const useAuth = () => {
         console.error('Error saving user to Firestore:', err)
       }
 
-      // Log register activity
-      await logActivity({
-        action: 'auth.register',
-        actorId: result.user.uid,
-        actorType: 'user',
-        targetType: 'auth',
-        targetId: result.user.uid,
-        status: 'success',
-        severity: 'info',
-        message: `${result.user.displayName || result.user.email || 'User'} registered`,
-        metadata: {
-          email: result.user.email,
-        },
-      })
       return result.user
     } catch (e: any) {
       error.value = getAuthErrorMessage(e.code)
@@ -146,24 +116,7 @@ export const useAuth = () => {
 
     try {
       if (!auth) throw new Error('Firebase auth not initialized')
-      const currentUser = user.value
       await signOut(auth)
-      // Log logout activity
-      if (currentUser) {
-        await logActivity({
-          action: 'auth.logout',
-          actorId: currentUser.uid,
-          actorType: 'user',
-          targetType: 'auth',
-          targetId: currentUser.uid,
-          status: 'success',
-          severity: 'info',
-          message: `${currentUser.displayName || currentUser.email || 'User'} logged out`,
-          metadata: {
-            email: currentUser.email,
-          },
-        })
-      }
       user.value = null
       currentUserProfile.value = null
       navigateTo('/login')

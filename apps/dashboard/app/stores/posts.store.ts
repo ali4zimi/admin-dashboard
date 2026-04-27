@@ -2,7 +2,6 @@
  * Posts Store - Global state management for posts
  *
  * Uses PostsService for Firebase operations.
- * Handles caching, activity logging, and state management.
  */
 
 import { defineStore } from 'pinia'
@@ -95,7 +94,6 @@ export const usePostsStore = defineStore('posts', {
 
     async createPost(postData: CreatePostData) {
       const { user } = useAuth()
-      const { logActivity } = useActivityLog()
       const actorUser = user.value as any
 
       this.loading = true
@@ -113,22 +111,6 @@ export const usePostsStore = defineStore('posts', {
 
         this.posts = [newPost, ...this.posts]
 
-        await logActivity({
-          action: 'post.create',
-          actorId: actorUser?.uid || '',
-          actorType: actorUser?.role || 'user',
-          targetType: 'post',
-          targetId: newPost.id || '',
-          status: 'success',
-          severity: 'info',
-          message: `${authorName} created post "${postData.title}"`,
-          changes: { before: null, after: { ...newPost } },
-          metadata: {
-            title: postData.title,
-            author: authorName,
-          },
-        })
-
         return newPost
       } catch (e: any) {
         this.error = e.message || 'Failed to create post'
@@ -139,40 +121,15 @@ export const usePostsStore = defineStore('posts', {
     },
 
     async updatePost(id: string, postData: UpdatePostData) {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const actorUser = user.value as any
-
       this.loading = true
       this.error = null
 
       try {
-        const beforePost = this.posts.find((post) => post.id === id)
-
         await PostsService.updatePost(id, postData)
 
         this.posts = this.posts.map((post) =>
           post.id === id ? { ...post, ...postData } : post
         )
-
-        const afterPost = this.posts.find((post) => post.id === id)
-        const actorName = actorUser?.displayName || actorUser?.email || ''
-
-        await logActivity({
-          action: 'post.update',
-          actorId: actorUser?.uid || '',
-          actorType: actorUser?.role || 'user',
-          targetType: 'post',
-          targetId: id,
-          status: 'success',
-          severity: 'info',
-          message: `${actorName} updated post "${postData.title || afterPost?.title || ''}"`,
-          changes: { before: beforePost, after: afterPost },
-          metadata: {
-            title: postData.title || afterPost?.title || '',
-            author: afterPost?.author || '',
-          },
-        })
 
         return { id, ...postData }
       } catch (e: any) {
@@ -184,34 +141,11 @@ export const usePostsStore = defineStore('posts', {
     },
 
     async deletePost(id: string) {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const actorUser = user.value as any
-
       this.loading = true
       this.error = null
 
       try {
-        const deletedPost = this.posts.find((post) => post.id === id)
-
         await PostsService.deletePost(id)
-
-        const actorName = actorUser?.displayName || actorUser?.email || ''
-        await logActivity({
-          action: 'post.delete',
-          actorId: actorUser?.uid || '',
-          actorType: actorUser?.role || 'user',
-          targetType: 'post',
-          targetId: id,
-          status: 'success',
-          severity: 'info',
-          message: `${actorName} deleted post "${deletedPost?.title || ''}"`,
-          changes: { before: deletedPost, after: null },
-          metadata: {
-            title: deletedPost?.title || '',
-            author: deletedPost?.author || '',
-          },
-        })
 
         this.posts = this.posts.filter((post) => post.id !== id)
         return true

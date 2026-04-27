@@ -1,8 +1,7 @@
 /**
  * Menu Store - Global state management for menu items and categories
- * 
+ *
  * Uses MenuService for Firebase operations.
- * Handles caching, activity logging, and state management.
  */
 
 import { defineStore } from 'pinia'
@@ -113,30 +112,13 @@ export const useMenuStore = defineStore('menu', {
     },
 
     async createMenuItem(itemData: CreateMenuItemData) {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const userData = user.value as any
-
       this.loading = true
       this.error = null
 
       try {
         const newItem = await MenuService.createMenuItem(itemData)
-        
-        this.menuItems = [newItem, ...this.menuItems]
 
-        await logActivity({
-          action: 'menuItem.create',
-          actorId: userData?.uid || '',
-          actorType: userData?.role || 'user',
-          targetType: 'menuItem',
-          targetId: newItem.id!,
-          status: 'success',
-          severity: 'info',
-          message: `Created menu item "${itemData.name}"`,
-          changes: { before: null, after: { ...newItem } },
-          metadata: { name: itemData.name },
-        })
+        this.menuItems = [newItem, ...this.menuItems]
 
         return newItem
       } catch (e: any) {
@@ -148,35 +130,15 @@ export const useMenuStore = defineStore('menu', {
     },
 
     async updateMenuItem(id: string, itemData: UpdateMenuItemData) {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const userData = user.value as any
-
       this.loading = true
       this.error = null
 
       try {
-        const beforeItem = this.menuItems.find(item => item.id === id)
-        
         await MenuService.updateMenuItem(id, itemData)
-        
-        this.menuItems = this.menuItems.map(item => 
+
+        this.menuItems = this.menuItems.map(item =>
           item.id === id ? { ...item, ...itemData } : item
         )
-        const afterItem = this.menuItems.find(item => item.id === id)
-
-        await logActivity({
-          action: 'menuItem.update',
-          actorId: userData?.uid || '',
-          actorType: userData?.role || 'user',
-          targetType: 'menuItem',
-          targetId: id,
-          status: 'success',
-          severity: 'info',
-          message: `Updated menu item "${itemData.name || afterItem?.name || ''}"`,
-          changes: { before: beforeItem, after: afterItem },
-          metadata: { name: itemData.name || afterItem?.name || '' },
-        })
 
         return { id, ...itemData }
       } catch (e: any) {
@@ -188,30 +150,11 @@ export const useMenuStore = defineStore('menu', {
     },
 
     async deleteMenuItem(id: string) {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const userData = user.value as any
-
       this.loading = true
       this.error = null
 
       try {
-        const deletedItem = this.menuItems.find(item => item.id === id)
-        
         await MenuService.deleteMenuItem(id)
-
-        await logActivity({
-          action: 'menuItem.delete',
-          actorId: userData?.uid || '',
-          actorType: userData?.role || 'user',
-          targetType: 'menuItem',
-          targetId: id,
-          status: 'success',
-          severity: 'info',
-          message: `Deleted menu item "${deletedItem?.name || ''}"`,
-          changes: { before: deletedItem, after: null },
-          metadata: { name: deletedItem?.name || '' },
-        })
 
         this.menuItems = this.menuItems.filter(item => item.id !== id)
         return true
@@ -262,30 +205,13 @@ export const useMenuStore = defineStore('menu', {
     },
 
     async createMenuCategory(categoryData: CreateMenuCategoryData) {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const userData = user.value as any
-
       this.loading = true
       this.error = null
 
       try {
         const newCategory = await MenuService.createMenuCategory(categoryData)
-        
-        this.menuCategories = [newCategory, ...this.menuCategories]
 
-        await logActivity({
-          action: 'menuCategory.create',
-          actorId: userData?.uid || '',
-          actorType: userData?.role || 'user',
-          targetType: 'menuCategory',
-          targetId: newCategory.id!,
-          status: 'success',
-          severity: 'info',
-          message: `Created menu category "${categoryData.name}"`,
-          changes: { before: null, after: { ...newCategory } },
-          metadata: { name: categoryData.name },
-        })
+        this.menuCategories = [newCategory, ...this.menuCategories]
 
         return newCategory
       } catch (e: any) {
@@ -297,35 +223,15 @@ export const useMenuStore = defineStore('menu', {
     },
 
     async updateMenuCategory(id: string, categoryData: UpdateMenuCategoryData) {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const userData = user.value as any
-
       this.loading = true
       this.error = null
 
       try {
-        const beforeCategory = this.menuCategories.find(cat => cat.id === id)
-        
         await MenuService.updateMenuCategory(id, categoryData)
-        
-        this.menuCategories = this.menuCategories.map(cat => 
+
+        this.menuCategories = this.menuCategories.map(cat =>
           cat.id === id ? { ...cat, ...categoryData } : cat
         )
-        const afterCategory = this.menuCategories.find(cat => cat.id === id)
-
-        await logActivity({
-          action: 'menuCategory.update',
-          actorId: userData?.uid || '',
-          actorType: userData?.role || 'user',
-          targetType: 'menuCategory',
-          targetId: id,
-          status: 'success',
-          severity: 'info',
-          message: `Updated menu category "${categoryData.name || afterCategory?.name || ''}"`,
-          changes: { before: beforeCategory, after: afterCategory },
-          metadata: { name: categoryData.name || afterCategory?.name || '' },
-        })
 
         return { id, ...categoryData }
       } catch (e: any) {
@@ -337,30 +243,11 @@ export const useMenuStore = defineStore('menu', {
     },
 
     async deleteMenuCategory(id: string) {
-      const { user } = useAuth()
-      const { logActivity } = useActivityLog()
-      const userData = user.value as any
-
       this.loading = true
       this.error = null
 
       try {
-        const deletedCategory = this.menuCategories.find(cat => cat.id === id)
-        
         await MenuService.deleteMenuCategory(id)
-
-        await logActivity({
-          action: 'menuCategory.delete',
-          actorId: userData?.uid || '',
-          actorType: userData?.role || 'user',
-          targetType: 'menuCategory',
-          targetId: id,
-          status: 'success',
-          severity: 'info',
-          message: `Deleted menu category "${deletedCategory?.name || ''}"`,
-          changes: { before: deletedCategory, after: null },
-          metadata: { name: deletedCategory?.name || '' },
-        })
 
         this.menuCategories = this.menuCategories.filter(cat => cat.id !== id)
         return true
