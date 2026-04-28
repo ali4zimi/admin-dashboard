@@ -4,10 +4,10 @@
       <div class="space-y-4">
         <!-- Name -->
         <div>
-          <label for="name" class="mb-1 block text-sm font-medium text-gray-700">Full Name</label>
+          <label for="displayName" class="mb-1 block text-sm font-medium text-gray-700">Full Name</label>
           <input
-            id="name"
-            v-model="form.name"
+            id="displayName"
+            v-model="form.displayName"
             type="text"
             required
             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -112,7 +112,7 @@ const isOpen = computed({
 const isEditing = computed(() => !!props.user?.id)
 
 const form = ref({
-  name: '',
+  displayName: '',
   email: '',
   role: 'user' as 'admin' | 'user',
   status: 'active' as 'active' | 'inactive',
@@ -124,14 +124,14 @@ watch(
   () => {
     if (props.modelValue && props.user) {
       form.value = {
-        name: props.user.name,
+        displayName: props.user.displayName,
         email: props.user.email,
         role: props.user.role,
         status: props.user.status,
       }
     } else if (props.modelValue) {
       form.value = {
-        name: '',
+        displayName: '',
         email: '',
         role: 'user',
         status: 'active',

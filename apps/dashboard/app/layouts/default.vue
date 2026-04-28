@@ -14,8 +14,14 @@
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       ]"
     >
-      <div class="flex h-16 items-center justify-center border-b border-gray-700">
-        <h1 class="text-xl font-bold">Admin Dashboard</h1>
+      <div class="flex h-16 items-center justify-center gap-3 border-b border-gray-700 px-4">
+        <img
+          v-if="logoUrl"
+          :src="logoUrl"
+          :alt="restaurantName"
+          class="h-8 w-8 rounded object-cover"
+        />
+        <h1 class="truncate text-xl font-bold">{{ restaurantName || 'Dashboard' }}</h1>
       </div>
       <nav class="mt-6 px-4">
         <ul class="space-y-2">
@@ -238,6 +244,7 @@
 
 <script setup lang="ts">
 const { user, logout } = useAuth()
+const { restaurantName, logoUrl } = useClient()
 
 const sidebarOpen = ref(false)
 const userMenuOpen = ref(false)

@@ -3,17 +3,21 @@ import type { Timestamp } from 'firebase/firestore'
 export type UserRole = 'admin' | 'user'
 export type UserStatus = 'active' | 'inactive'
 
+/**
+ * Mirrors the user document shape written by the super-admin app
+ * (under clients/{clientId}/users). Some fields (capabilities, disabled,
+ * emailVerified, phoneNumber) are owned by the super-admin and ignored here.
+ */
 export interface UserData {
   id?: string
-  uid?: string
-  name: string
+  authUid?: string
+  displayName: string
   email: string
   role: UserRole
   status: UserStatus
-  joined?: Timestamp | Date
   createdAt?: Timestamp
   updatedAt?: Timestamp
 }
 
-export type CreateUserData = Omit<UserData, 'id' | 'createdAt' | 'updatedAt' | 'joined'>
+export type CreateUserData = Omit<UserData, 'id' | 'createdAt' | 'updatedAt'>
 export type UpdateUserData = Partial<UserData>

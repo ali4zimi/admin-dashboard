@@ -1,4 +1,5 @@
-import { doc, getDoc } from 'firebase/firestore'
+import { getDoc } from 'firebase/firestore'
+import { clientDoc } from '~/services/firebase'
 
 interface RestaurantSettingsData {
   currencyCode?: string
@@ -42,7 +43,7 @@ export const useRestaurantSettings = () => {
     settingsLoading.value = true
 
     try {
-      const settingsRef = doc(firestore, SETTINGS_COLLECTION, SETTINGS_DOC_ID)
+      const settingsRef = clientDoc(SETTINGS_COLLECTION, SETTINGS_DOC_ID)
       const snapshot = await getDoc(settingsRef)
 
       if (snapshot.exists()) {

@@ -1,15 +1,11 @@
 /**
- * Orders Service - Raw Firebase operations for orders
- *
- * This service contains only Firebase CRUD operations.
- * No state management, no activity logging - those belong in the store.
+ * Orders Service - Raw Firebase operations for orders.
+ * All paths are scoped to clients/{clientId} via the helpers in ./firebase.
  */
 
 import {
   addDoc,
-  collection,
   deleteDoc,
-  doc,
   getDoc,
   getDocs,
   orderBy,
@@ -17,7 +13,7 @@ import {
   serverTimestamp,
   updateDoc,
 } from 'firebase/firestore'
-import { getFirestore } from './firebase'
+import { clientCol, clientDoc } from './firebase'
 import type { Order, OrderItem } from '~/types/order.types'
 
 const ORDER_COLLECTION = 'orders'
@@ -33,13 +29,8 @@ interface CreateOrderServiceData {
   orderNumber?: string
 }
 
-/**
- * Fetch all orders ordered by creation date.
- * Items are stored directly on each order document.
- */
 export const fetchAllOrders = async (): Promise<Order[]> => {
-  const firestore = getFirestore()
-  const ordersRef = collection(firestore, ORDER_COLLECTION)
+  const ordersRef = clientCol(ORDER_COLLECTION)
   const q = query(ordersRef, orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
 
@@ -53,13 +44,8 @@ export const fetchAllOrders = async (): Promise<Order[]> => {
   }) as Order[]
 }
 
-/**
- * Fetch one order by ID.
- * Items are stored directly on the order document.
- */
 export const fetchOrderById = async (id: string): Promise<Order | null> => {
-  const firestore = getFirestore()
-  const docRef = doc(firestore, ORDER_COLLECTION, id)
+  const docRef = clientDoc(ORDER_COLLECTION, id)
   const docSnap = await getDoc(docRef)
 
   if (!docSnap.exists()) {
@@ -75,12 +61,8 @@ export const fetchOrderById = async (id: string): Promise<Order | null> => {
   } as Order
 }
 
-/**
- * Create order document with items embedded in the same document.
- */
 export const createOrder = async (orderData: CreateOrderServiceData): Promise<Order> => {
-  const firestore = getFirestore()
-  const ordersRef = collection(firestore, ORDER_COLLECTION)
+  const ordersRef = clientCol(ORDER_COLLECTION)
 
   const newOrderData = {
     ...orderData,
@@ -96,12 +78,8 @@ export const createOrder = async (orderData: CreateOrderServiceData): Promise<Or
   }
 }
 
-/**
- * Update order document fields, including items.
- */
 export const updateOrder = async (id: string, orderData: Partial<Order>): Promise<void> => {
-  const firestore = getFirestore()
-  const docRef = doc(firestore, ORDER_COLLECTION, id)
+  const docRef = clientDoc(ORDER_COLLECTION, id)
 
   await updateDoc(docRef, {
     ...orderData,
@@ -109,21 +87,13 @@ export const updateOrder = async (id: string, orderData: Partial<Order>): Promis
   })
 }
 
-/**
- * Delete order by ID.
- */
 export const deleteOrder = async (id: string): Promise<void> => {
-  const firestore = getFirestore()
-  const docRef = doc(firestore, ORDER_COLLECTION, id)
+  const docRef = clientDoc(ORDER_COLLECTION, id)
   await deleteDoc(docRef)
 }
 
-/**
- * Add one item to order items array.
- */
 export const addOrderItem = async (orderId: string, item: Omit<OrderItem, 'id'>): Promise<OrderItem> => {
-  const firestore = getFirestore()
-  const orderRef = doc(firestore, ORDER_COLLECTION, orderId)
+  const orderRef = clientDoc(ORDER_COLLECTION, orderId)
   const orderSnap = await getDoc(orderRef)
 
   if (!orderSnap.exists()) {
@@ -146,16 +116,12 @@ export const addOrderItem = async (orderId: string, item: Omit<OrderItem, 'id'>)
   return newItem
 }
 
-/**
- * Update one order item.
- */
 export const updateOrderItem = async (
   orderId: string,
   itemId: string,
   itemData: Partial<OrderItem>
 ): Promise<void> => {
-  const firestore = getFirestore()
-  const orderRef = doc(firestore, ORDER_COLLECTION, orderId)
+  const orderRef = clientDoc(ORDER_COLLECTION, orderId)
   const orderSnap = await getDoc(orderRef)
 
   if (!orderSnap.exists()) {
@@ -175,12 +141,8 @@ export const updateOrderItem = async (
   })
 }
 
-/**
- * Delete one order item.
- */
 export const deleteOrderItem = async (orderId: string, itemId: string): Promise<void> => {
-  const firestore = getFirestore()
-  const orderRef = doc(firestore, ORDER_COLLECTION, orderId)
+  const orderRef = clientDoc(ORDER_COLLECTION, orderId)
   const orderSnap = await getDoc(orderRef)
 
   if (!orderSnap.exists()) {

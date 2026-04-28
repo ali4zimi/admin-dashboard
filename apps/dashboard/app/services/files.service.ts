@@ -1,8 +1,7 @@
 /**
- * Files Service - Raw Firebase operations for file storage and metadata
- *
- * This service contains only Firebase operations.
- * No state management, no activity logging - those belong in the store.
+ * Files Service - Raw Firebase operations for file storage and metadata.
+ * Firestore docs live under clients/{clientId}/files.
+ * Storage objects live under {clientId}/<caller-supplied path>.
  */
 
 import {
@@ -16,16 +15,14 @@ import {
 } from 'firebase/storage'
 import {
   addDoc,
-  collection,
   deleteDoc,
-  doc,
   getDocs,
   orderBy,
   query,
   serverTimestamp,
   where,
 } from 'firebase/firestore'
-import { getFirestore, getStorage } from './firebase'
+import { clientCol, clientDoc, clientStoragePath, getStorage } from './firebase'
 import type { FileMetadataRecord } from '~/types/file.types'
 
 const FILES_COLLECTION = 'files'
@@ -94,12 +91,8 @@ const buildThumbnailBlob = async (file: File): Promise<Blob | null> => {
   })
 }
 
-/**
- * Fetch all file metadata documents from Firestore.
- */
 export const fetchAllFileMetadata = async (): Promise<FileMetadataRecord[]> => {
-  const firestore = getFirestore()
-  const filesRef = collection(firestore, FILES_COLLECTION)
+  const filesRef = clientCol(FILES_COLLECTION)
   const q = query(filesRef, orderBy('createdAt', 'desc'))
   const snapshot = await getDocs(q)
 
@@ -123,9 +116,6 @@ export const fetchAllFileMetadata = async (): Promise<FileMetadataRecord[]> => {
   })
 }
 
-/**
- * Upload a single file to Firebase Storage.
- */
 export const uploadFileToStorage = async (
   file: File,
   path: string,
@@ -144,7 +134,8 @@ export const uploadFileToStorage = async (
   updatedAt: Date
 }> => {
   const storage = getStorage()
-  const fullPath = `${path}/${Date.now()}_${file.name}`
+  const scopedPath = clientStoragePath(path)
+  const fullPath = `${scopedPath}/${Date.now()}_${file.name}`
   const fileRef = storageRef(storage, fullPath)
 
   const uploadTask = uploadBytesResumable(fileRef, file, {
@@ -182,7 +173,7 @@ export const uploadFileToStorage = async (
     const thumbnailBlob = await buildThumbnailBlob(file)
 
     if (thumbnailBlob) {
-      const thumbnailFullPath = `${path}/thumbnails/${Date.now()}_thumb_${file.name.replace(/\.[^/.]+$/, '')}.jpg`
+      const thumbnailFullPath = `${scopedPath}/thumbnails/${Date.now()}_thumb_${file.name.replace(/\.[^/.]+$/, '')}.jpg`
       const thumbnailRef = storageRef(storage, thumbnailFullPath)
 
       const thumbnailSnapshot = await uploadBytes(thumbnailRef, thumbnailBlob, {
@@ -219,9 +210,6 @@ export const uploadFileToStorage = async (
   }
 }
 
-/**
- * Persist uploaded file metadata in Firestore.
- */
 export const createFileMetadata = async (data: {
   name: string
   fullPath: string
@@ -234,8 +222,7 @@ export const createFileMetadata = async (data: {
   thumbnailSize?: number
   thumbnailContentType?: string
 }): Promise<string> => {
-  const firestore = getFirestore()
-  const docRef = await addDoc(collection(firestore, FILES_COLLECTION), {
+  const docRef = await addDoc(clientCol(FILES_COLLECTION), {
     ...data,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -244,18 +231,12 @@ export const createFileMetadata = async (data: {
   return docRef.id
 }
 
-/**
- * Delete a Storage file by full path.
- */
 export const deleteFileFromStorage = async (fullPath: string): Promise<void> => {
   const storage = getStorage()
   const fileRef = storageRef(storage, fullPath)
   await deleteObject(fileRef)
 }
 
-/**
- * Delete an optional thumbnail file by its full path.
- */
 export const deleteThumbnailFromStorage = async (fullPath?: string): Promise<void> => {
   if (!fullPath) {
     return
@@ -274,18 +255,13 @@ export const deleteThumbnailFromStorage = async (fullPath?: string): Promise<voi
   }
 }
 
-/**
- * Delete Firestore metadata docs for a file by full path.
- * Returns deleted doc IDs.
- */
 export const deleteFileMetadataByFullPath = async (fullPath: string): Promise<string[]> => {
-  const firestore = getFirestore()
-  const q = query(collection(firestore, FILES_COLLECTION), where('fullPath', '==', fullPath))
+  const q = query(clientCol(FILES_COLLECTION), where('fullPath', '==', fullPath))
   const snapshot = await getDocs(q)
 
   const deletedIds: string[] = []
   for (const docItem of snapshot.docs) {
-    await deleteDoc(doc(firestore, FILES_COLLECTION, docItem.id))
+    await deleteDoc(clientDoc(FILES_COLLECTION, docItem.id))
     deletedIds.push(docItem.id)
   }
 

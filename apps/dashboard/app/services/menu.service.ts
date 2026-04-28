@@ -1,13 +1,9 @@
 /**
- * Menu Service - Raw Firebase operations for menu items and categories
- * 
- * This service contains only Firebase CRUD operations.
- * No state management, no activity logging - those belong in the store.
+ * Menu Service - Raw Firebase operations for menu items and categories.
+ * All paths are scoped to clients/{clientId} via the helpers in ./firebase.
  */
 
 import {
-  collection,
-  doc,
   getDocs,
   getDoc,
   addDoc,
@@ -19,11 +15,11 @@ import {
   serverTimestamp,
   writeBatch,
 } from 'firebase/firestore'
-import { getFirestore } from './firebase'
-import type { 
-  MenuItem, 
+import { clientCol, clientDoc, getFirestore } from './firebase'
+import type {
+  MenuItem,
   MenuCategory,
-  CreateMenuItemData, 
+  CreateMenuItemData,
   UpdateMenuItemData,
   CreateMenuCategoryData,
   UpdateMenuCategoryData,
@@ -59,10 +55,9 @@ const mapNestedItemDoc = (docItem: any): MenuItem => {
 }
 
 const findNestedItemById = async (id: string) => {
-  const firestore = getFirestore()
   const [menuSnapshot, legacyMenuSnapshot] = await Promise.all([
-    getDocs(collection(firestore, MENU_COLLECTION)),
-    getDocs(collection(firestore, LEGACY_CATEGORIES_COLLECTION)),
+    getDocs(clientCol(MENU_COLLECTION)),
+    getDocs(clientCol(LEGACY_CATEGORIES_COLLECTION)),
   ])
 
   const categoryRefs = [
@@ -77,8 +72,7 @@ const findNestedItemById = async (id: string) => {
   ]
 
   for (const categoryRef of categoryRefs) {
-    const nestedRef = doc(
-      firestore,
+    const nestedRef = clientDoc(
       categoryRef.collectionName,
       categoryRef.categoryId,
       ITEMS_SUBCOLLECTION,
@@ -96,21 +90,16 @@ const findNestedItemById = async (id: string) => {
 
 // ==================== Menu Items ====================
 
-/**
- * Fetch all menu items ordered by creation date
- */
 export const fetchAllMenuItems = async (): Promise<MenuItem[]> => {
-  const firestore = getFirestore()
-
   // New structure: menu/{categoryId}/items/{itemId}
   // Compatibility structure: menuCategories/{categoryId}/items/{itemId}
   const [menuSnapshot, legacyMenuSnapshot] = await Promise.all([
-    getDocs(collection(firestore, MENU_COLLECTION)),
-    getDocs(collection(firestore, LEGACY_CATEGORIES_COLLECTION)),
+    getDocs(clientCol(MENU_COLLECTION)),
+    getDocs(clientCol(LEGACY_CATEGORIES_COLLECTION)),
   ])
 
   const readNestedItems = async (collectionName: string, categoryId: string) => {
-    const itemsRef = collection(firestore, collectionName, categoryId, ITEMS_SUBCOLLECTION)
+    const itemsRef = clientCol(collectionName, categoryId, ITEMS_SUBCOLLECTION)
     const itemsSnapshot = await getDocs(query(itemsRef, orderBy('createdAt', 'desc')))
     return itemsSnapshot.docs.map((docItem) => mapNestedItemDoc(docItem))
   }
@@ -123,7 +112,7 @@ export const fetchAllMenuItems = async (): Promise<MenuItem[]> => {
   const nestedItems = nestedItemGroups.flat()
 
   // Backward compatibility: also read legacy top-level collection during transition.
-  const legacyRef = collection(firestore, ITEMS_COLLECTION)
+  const legacyRef = clientCol(ITEMS_COLLECTION)
   const legacySnapshot = await getDocs(query(legacyRef, orderBy('createdAt', 'desc')))
   const legacyItems = legacySnapshot.docs.map((docItem) => ({
     id: docItem.id,
@@ -147,73 +136,52 @@ export const fetchAllMenuItems = async (): Promise<MenuItem[]> => {
   )
 }
 
-/**
- * Fetch a single menu item by ID
- */
 export const fetchMenuItemById = async (id: string): Promise<MenuItem | null> => {
-  const firestore = getFirestore()
-
   const nestedDoc = await findNestedItemById(id)
   if (nestedDoc) {
     return mapNestedItemDoc(nestedDoc)
   }
 
   // Fallback for legacy top-level items.
-  const docRef = doc(firestore, ITEMS_COLLECTION, id)
+  const docRef = clientDoc(ITEMS_COLLECTION, id)
   const docSnap = await getDoc(docRef)
-  
+
   if (docSnap.exists()) {
     return { id: docSnap.id, ...docSnap.data() } as MenuItem
   }
   return null
 }
 
-/**
- * Create a new menu item
- */
 export const createMenuItem = async (itemData: CreateMenuItemData): Promise<MenuItem> => {
-  const firestore = getFirestore()
-
   if (!itemData.categoryId) {
     throw new Error('Menu item category is required')
   }
 
-  const itemsRef = collection(
-    firestore,
-    MENU_COLLECTION,
-    itemData.categoryId,
-    ITEMS_SUBCOLLECTION
-  )
-  
+  const itemsRef = clientCol(MENU_COLLECTION, itemData.categoryId, ITEMS_SUBCOLLECTION)
+
   const newItemData = {
     ...itemData,
     categoryId: itemData.categoryId,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   }
-  
+
   const docRef = await addDoc(itemsRef, newItemData)
-  
-  return { 
-    id: docRef.id, 
-    ...itemData 
+
+  return {
+    id: docRef.id,
+    ...itemData
   }
 }
 
-/**
- * Update an existing menu item
- */
 export const updateMenuItem = async (id: string, itemData: UpdateMenuItemData): Promise<void> => {
-  const firestore = getFirestore()
-
   const nestedDoc = await findNestedItemById(id)
   if (nestedDoc) {
     const currentCategoryId = nestedDoc.ref.parent.parent?.id
     const targetCategoryId = itemData.categoryId || currentCategoryId
 
     if (targetCategoryId && currentCategoryId && targetCategoryId !== currentCategoryId) {
-      const movedRef = doc(
-        firestore,
+      const movedRef = clientDoc(
         MENU_COLLECTION,
         targetCategoryId,
         ITEMS_SUBCOLLECTION,
@@ -244,12 +212,11 @@ export const updateMenuItem = async (id: string, itemData: UpdateMenuItemData): 
   }
 
   // Legacy fallback: update top-level doc, or migrate to nested if category changed.
-  const legacyRef = doc(firestore, ITEMS_COLLECTION, id)
+  const legacyRef = clientDoc(ITEMS_COLLECTION, id)
   const legacySnap = await getDoc(legacyRef)
 
   if (legacySnap.exists() && itemData.categoryId) {
-    const migratedRef = doc(
-      firestore,
+    const migratedRef = clientDoc(
       MENU_COLLECTION,
       itemData.categoryId,
       ITEMS_SUBCOLLECTION,
@@ -277,12 +244,7 @@ export const updateMenuItem = async (id: string, itemData: UpdateMenuItemData): 
   })
 }
 
-/**
- * Delete a menu item by ID
- */
 export const deleteMenuItem = async (id: string): Promise<void> => {
-  const firestore = getFirestore()
-
   const nestedDoc = await findNestedItemById(id)
   if (nestedDoc) {
     await deleteDoc(nestedDoc.ref)
@@ -290,20 +252,16 @@ export const deleteMenuItem = async (id: string): Promise<void> => {
   }
 
   // Legacy fallback
-  const docRef = doc(firestore, ITEMS_COLLECTION, id)
+  const docRef = clientDoc(ITEMS_COLLECTION, id)
   await deleteDoc(docRef)
 }
 
 // ==================== Menu Categories ====================
 
-/**
- * Fetch all menu categories ordered by creation date
- */
 export const fetchAllMenuCategories = async (): Promise<MenuCategory[]> => {
-  const firestore = getFirestore()
   const [menuSnapshot, legacySnapshot] = await Promise.all([
-    getDocs(query(collection(firestore, MENU_COLLECTION), orderBy('createdAt', 'desc'))),
-    getDocs(query(collection(firestore, LEGACY_CATEGORIES_COLLECTION), orderBy('createdAt', 'desc'))),
+    getDocs(query(clientCol(MENU_COLLECTION), orderBy('createdAt', 'desc'))),
+    getDocs(query(clientCol(LEGACY_CATEGORIES_COLLECTION), orderBy('createdAt', 'desc'))),
   ])
 
   const deduped = new Map<string, MenuCategory>()
@@ -327,19 +285,15 @@ export const fetchAllMenuCategories = async (): Promise<MenuCategory[]> => {
   )
 }
 
-/**
- * Fetch a single menu category by ID
- */
 export const fetchMenuCategoryById = async (id: string): Promise<MenuCategory | null> => {
-  const firestore = getFirestore()
-  const docRef = doc(firestore, MENU_COLLECTION, id)
+  const docRef = clientDoc(MENU_COLLECTION, id)
   const docSnap = await getDoc(docRef)
-  
+
   if (docSnap.exists()) {
     return { id: docSnap.id, ...docSnap.data() } as MenuCategory
   }
 
-  const legacyRef = doc(firestore, LEGACY_CATEGORIES_COLLECTION, id)
+  const legacyRef = clientDoc(LEGACY_CATEGORIES_COLLECTION, id)
   const legacySnap = await getDoc(legacyRef)
 
   if (legacySnap.exists()) {
@@ -349,33 +303,25 @@ export const fetchMenuCategoryById = async (id: string): Promise<MenuCategory | 
   return null
 }
 
-/**
- * Create a new menu category
- */
 export const createMenuCategory = async (categoryData: CreateMenuCategoryData): Promise<MenuCategory> => {
-  const firestore = getFirestore()
-  const categoriesRef = collection(firestore, MENU_COLLECTION)
-  
+  const categoriesRef = clientCol(MENU_COLLECTION)
+
   const newCategoryData = {
     ...categoryData,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   }
-  
+
   const docRef = await addDoc(categoriesRef, newCategoryData)
-  
-  return { 
-    id: docRef.id, 
-    ...categoryData 
+
+  return {
+    id: docRef.id,
+    ...categoryData
   }
 }
 
-/**
- * Update an existing menu category
- */
 export const updateMenuCategory = async (id: string, categoryData: UpdateMenuCategoryData): Promise<void> => {
-  const firestore = getFirestore()
-  const docRef = doc(firestore, MENU_COLLECTION, id)
+  const docRef = clientDoc(MENU_COLLECTION, id)
   const docSnap = await getDoc(docRef)
 
   if (docSnap.exists()) {
@@ -386,23 +332,18 @@ export const updateMenuCategory = async (id: string, categoryData: UpdateMenuCat
     return
   }
 
-  const legacyRef = doc(firestore, LEGACY_CATEGORIES_COLLECTION, id)
+  const legacyRef = clientDoc(LEGACY_CATEGORIES_COLLECTION, id)
   await updateDoc(legacyRef, {
     ...categoryData,
     updatedAt: serverTimestamp(),
   })
 }
 
-/**
- * Delete a menu category by ID
- */
 export const deleteMenuCategory = async (id: string): Promise<void> => {
-  const firestore = getFirestore()
-
   // Delete nested child items first.
   const [itemsSnapshot, legacyItemsSnapshot] = await Promise.all([
-    getDocs(collection(firestore, MENU_COLLECTION, id, ITEMS_SUBCOLLECTION)),
-    getDocs(collection(firestore, LEGACY_CATEGORIES_COLLECTION, id, ITEMS_SUBCOLLECTION)),
+    getDocs(clientCol(MENU_COLLECTION, id, ITEMS_SUBCOLLECTION)),
+    getDocs(clientCol(LEGACY_CATEGORIES_COLLECTION, id, ITEMS_SUBCOLLECTION)),
   ])
 
   await Promise.all([
@@ -411,40 +352,32 @@ export const deleteMenuCategory = async (id: string): Promise<void> => {
   ])
 
   await Promise.all([
-    deleteDoc(doc(firestore, MENU_COLLECTION, id)),
-    deleteDoc(doc(firestore, LEGACY_CATEGORIES_COLLECTION, id)),
+    deleteDoc(clientDoc(MENU_COLLECTION, id)),
+    deleteDoc(clientDoc(LEGACY_CATEGORIES_COLLECTION, id)),
   ])
 }
 
-/**
- * Batch-update the order field for multiple categories
- */
 export const updateMenuCategoryOrders = async (
   orders: Array<{ id: string; order: number }>
 ): Promise<void> => {
-  const firestore = getFirestore()
-  const batch = writeBatch(firestore)
+  const batch = writeBatch(getFirestore())
 
   for (const { id, order } of orders) {
-    const docRef = doc(firestore, MENU_COLLECTION, id)
+    const docRef = clientDoc(MENU_COLLECTION, id)
     batch.update(docRef, { order, updatedAt: serverTimestamp() })
   }
 
   await batch.commit()
 }
 
-/**
- * Batch-update the order field for multiple items within a category
- */
 export const updateMenuItemOrders = async (
   categoryId: string,
   orders: Array<{ id: string; order: number }>
 ): Promise<void> => {
-  const firestore = getFirestore()
-  const batch = writeBatch(firestore)
+  const batch = writeBatch(getFirestore())
 
   for (const { id, order } of orders) {
-    const docRef = doc(firestore, MENU_COLLECTION, categoryId, ITEMS_SUBCOLLECTION, id)
+    const docRef = clientDoc(MENU_COLLECTION, categoryId, ITEMS_SUBCOLLECTION, id)
     batch.update(docRef, { order, updatedAt: serverTimestamp() })
   }
 

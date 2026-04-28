@@ -7,8 +7,10 @@
 
 import type { FirebaseApp } from 'firebase/app'
 import type { Auth } from 'firebase/auth'
-import type { Firestore } from 'firebase/firestore'
+import { collection, doc, type CollectionReference, type DocumentReference, type Firestore } from 'firebase/firestore'
 import type { FirebaseStorage } from 'firebase/storage'
+
+const CLIENTS_ROOT = 'clients'
 
 export interface FirebaseInstances {
   firebase: FirebaseApp | undefined
@@ -62,4 +64,52 @@ export const getStorage = (): FirebaseStorage => {
     throw new Error('Storage not initialized')
   }
   return storage
+}
+
+/**
+ * Read the per-deployment client (restaurant) ID from runtime config.
+ * Throws if NUXT_PUBLIC_CLIENT_ID is not set — every deployment must be scoped to one client.
+ */
+export const getClientId = (): string => {
+  const config = useRuntimeConfig()
+  const clientId = (config.public.clientId as string | undefined)?.trim()
+  if (!clientId) {
+    throw new Error('Client ID not configured. Set NUXT_PUBLIC_CLIENT_ID in the environment.')
+  }
+  return clientId
+}
+
+/**
+ * Reference to the parent doc at clients/{clientId} itself
+ * (the tenant metadata doc owned by the super-admin app).
+ */
+export const clientRootDoc = (): DocumentReference => {
+  const firestore = getFirestore()
+  return doc(firestore, CLIENTS_ROOT, getClientId())
+}
+
+/**
+ * Build a Firestore CollectionReference scoped to clients/{clientId}/...segments.
+ * Pass an odd number of segments (collection paths).
+ */
+export const clientCol = (...segments: [string, ...string[]]): CollectionReference => {
+  const firestore = getFirestore()
+  return collection(firestore, CLIENTS_ROOT, getClientId(), ...segments)
+}
+
+/**
+ * Build a Firestore DocumentReference scoped to clients/{clientId}/...segments.
+ * Pass an even number of segments (document paths).
+ */
+export const clientDoc = (...segments: [string, string, ...string[]]): DocumentReference => {
+  const firestore = getFirestore()
+  return doc(firestore, CLIENTS_ROOT, getClientId(), ...segments)
+}
+
+/**
+ * Prefix a Storage path with the current client ID, e.g. "uploads" → "{clientId}/uploads".
+ */
+export const clientStoragePath = (path: string): string => {
+  const cleaned = String(path || '').replace(/^\/+|\/+$/g, '')
+  return cleaned ? `${getClientId()}/${cleaned}` : getClientId()
 }

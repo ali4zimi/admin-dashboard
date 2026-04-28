@@ -98,12 +98,12 @@
               <td class="whitespace-nowrap px-6 py-4">
                 <div class="flex items-center">
                   <img
-                    :src="`https://ui-avatars.com/api/?name=${user.name.replace(' ', '+')}&background=random`"
-                    :alt="user.name"
+                    :src="avatarUrl(user)"
+                    :alt="userLabel(user)"
                     class="h-10 w-10 rounded-full"
                   />
                   <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">{{ user.name }}</div>
+                    <div class="text-sm font-medium text-gray-900">{{ userLabel(user) }}</div>
                   </div>
                 </div>
               </td>
@@ -129,7 +129,7 @@
                   {{ user.status === 'active' ? 'Active' : 'Inactive' }}
                 </span>
               </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ formatDate(user.joined) }}</td>
+              <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ formatDate(user.createdAt) }}</td>
               <td class="whitespace-nowrap px-6 py-4 text-right text-sm">
                 <div class="flex justify-end space-x-2">
                   <button
@@ -178,7 +178,7 @@
     <DeleteConfirmModal
       v-model="showDeleteModal"
       :item-id="userToDelete?.id || null"
-      :item-name="userToDelete?.name || ''"
+      :item-name="userToDelete?.displayName || ''"
       item-type="User"
       @confirm="handleUserDeleted"
     />
@@ -247,6 +247,15 @@ const handleUserDeleted = async () => {
     await deleteUser(userToDelete.value.id)
   }
   userToDelete.value = null
+}
+
+const userLabel = (user: UserData): string => {
+  return user.displayName?.trim() || user.email?.split('@')[0] || 'Unnamed user'
+}
+
+const avatarUrl = (user: UserData): string => {
+  const encoded = encodeURIComponent(userLabel(user))
+  return `https://ui-avatars.com/api/?name=${encoded}&background=random`
 }
 
 // Format date helper

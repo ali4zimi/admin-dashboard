@@ -29,4 +29,19 @@ export default defineNuxtRouteMiddleware(async (to) => {
     await logout()
     return navigateTo('/login')
   }
+
+  // /suspended renders even when the client is not active — that's the whole point.
+  if (to.path === '/suspended') {
+    return
+  }
+
+  // Tenant gate: load the parent clients/{clientId} doc and block the dashboard
+  // unless the client exists and is active.
+  const { client, loadClient } = useClient()
+  if (!client.value) {
+    await loadClient()
+  }
+  if (!client.value || client.value.status !== 'active') {
+    return navigateTo('/suspended')
+  }
 })

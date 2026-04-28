@@ -54,8 +54,8 @@ export const useUsersStore = defineStore('users', {
         const term = searchTerm.toLowerCase()
         results = results.filter(
           (user) =>
-            user.name.toLowerCase().includes(term) ||
-            user.email.toLowerCase().includes(term)
+            (user.displayName || '').toLowerCase().includes(term) ||
+            (user.email || '').toLowerCase().includes(term)
         )
       }
 
@@ -210,8 +210,8 @@ export const useUsersStore = defineStore('users', {
           const term = searchTerm.toLowerCase()
           results = results.filter(
             (existingUser) =>
-              existingUser.name.toLowerCase().includes(term) ||
-              existingUser.email.toLowerCase().includes(term)
+              (existingUser.displayName || '').toLowerCase().includes(term) ||
+              (existingUser.email || '').toLowerCase().includes(term)
           )
         }
 

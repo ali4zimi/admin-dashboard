@@ -1,16 +1,14 @@
 /**
- * Menu Service - Raw Firebase operations for menu items and categories
- *
- * This service contains only Firebase read operations.
+ * Menu Service - Read-only Firestore operations for menu items and categories.
+ * All paths are scoped to clients/{clientId} via the helpers in ./firebase.
  */
 
 import {
-  collection,
   getDocs,
   query,
   orderBy,
 } from 'firebase/firestore'
-import { getFirestore } from './firebase'
+import { clientCol } from './firebase'
 import type { MenuItem, MenuCategory } from '@restaurant-platform/types'
 
 const ITEMS_COLLECTION = 'menuItems'
@@ -44,21 +42,16 @@ const mapNestedItemDoc = (docItem: any): MenuItem => {
 
 // ==================== Menu Items ====================
 
-/**
- * Fetch all menu items ordered by creation date
- */
 export const fetchAllMenuItems = async (): Promise<MenuItem[]> => {
-  const firestore = getFirestore()
-
   // New structure: menu/{categoryId}/items/{itemId}
   // Compatibility structure: menuCategories/{categoryId}/items/{itemId}
   const [menuSnapshot, legacyMenuSnapshot] = await Promise.all([
-    getDocs(collection(firestore, MENU_COLLECTION)),
-    getDocs(collection(firestore, LEGACY_CATEGORIES_COLLECTION)),
+    getDocs(clientCol(MENU_COLLECTION)),
+    getDocs(clientCol(LEGACY_CATEGORIES_COLLECTION)),
   ])
 
   const readNestedItems = async (collectionName: string, categoryId: string) => {
-    const itemsRef = collection(firestore, collectionName, categoryId, ITEMS_SUBCOLLECTION)
+    const itemsRef = clientCol(collectionName, categoryId, ITEMS_SUBCOLLECTION)
     const itemsSnapshot = await getDocs(query(itemsRef, orderBy('createdAt', 'desc')))
     return itemsSnapshot.docs.map((docItem) => mapNestedItemDoc(docItem))
   }
@@ -71,7 +64,7 @@ export const fetchAllMenuItems = async (): Promise<MenuItem[]> => {
   const nestedItems = nestedItemGroups.flat()
 
   // Backward compatibility: also read legacy top-level collection during transition.
-  const legacyRef = collection(firestore, ITEMS_COLLECTION)
+  const legacyRef = clientCol(ITEMS_COLLECTION)
   const legacySnapshot = await getDocs(query(legacyRef, orderBy('createdAt', 'desc')))
   const legacyItems = legacySnapshot.docs.map((docItem) => ({
     id: docItem.id,
@@ -97,14 +90,10 @@ export const fetchAllMenuItems = async (): Promise<MenuItem[]> => {
 
 // ==================== Menu Categories ====================
 
-/**
- * Fetch all menu categories ordered by creation date
- */
 export const fetchAllMenuCategories = async (): Promise<MenuCategory[]> => {
-  const firestore = getFirestore()
   const [menuSnapshot, legacySnapshot] = await Promise.all([
-    getDocs(query(collection(firestore, MENU_COLLECTION), orderBy('createdAt', 'desc'))),
-    getDocs(query(collection(firestore, LEGACY_CATEGORIES_COLLECTION), orderBy('createdAt', 'desc'))),
+    getDocs(query(clientCol(MENU_COLLECTION), orderBy('createdAt', 'desc'))),
+    getDocs(query(clientCol(LEGACY_CATEGORIES_COLLECTION), orderBy('createdAt', 'desc'))),
   ])
 
   const deduped = new Map<string, MenuCategory>()

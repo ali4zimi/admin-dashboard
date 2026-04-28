@@ -94,9 +94,9 @@ export const useAuth = () => {
 
       try {
         await UsersService.createUser({
-          uid: result.user.uid,
+          authUid: result.user.uid,
           email: result.user.email || '',
-          name: result.user.displayName || '',
+          displayName: result.user.displayName || '',
           role: 'user',
           status: 'inactive',
         })

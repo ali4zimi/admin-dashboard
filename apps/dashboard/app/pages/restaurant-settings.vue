@@ -184,8 +184,9 @@
 </template>
 
 <script setup lang="ts">
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import type { Timestamp } from 'firebase/firestore'
+import { clientDoc } from '~/services/firebase'
 
 interface RestaurantSettings {
   restaurantName: string
@@ -250,7 +251,7 @@ const loadSettings = async () => {
   error.value = ''
 
   try {
-    const settingsRef = doc(firestore, SETTINGS_COLLECTION, SETTINGS_DOC_ID)
+    const settingsRef = clientDoc(SETTINGS_COLLECTION, SETTINGS_DOC_ID)
     const snapshot = await getDoc(settingsRef)
 
     if (!snapshot.exists()) {
@@ -296,7 +297,7 @@ const saveSettings = async () => {
       updatedAt: serverTimestamp(),
     }
 
-    await setDoc(doc(firestore, SETTINGS_COLLECTION, SETTINGS_DOC_ID), payload, { merge: true })
+    await setDoc(clientDoc(SETTINGS_COLLECTION, SETTINGS_DOC_ID), payload, { merge: true })
 
     lastUpdated.value = new Date()
     successMessage.value = 'Settings saved successfully.'

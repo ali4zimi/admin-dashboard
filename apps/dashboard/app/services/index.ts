@@ -1,5 +1,6 @@
 // Re-export all services from a single entry point
 export * from './firebase'
+export * as ClientService from './client.service'
 export * as TablesService from './tables.service'
 export * as MenuService from './menu.service'
 export * as UsersService from './users.service'

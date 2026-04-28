@@ -1,4 +1,5 @@
 // Re-export all types from a single entry point
+export * from './client.types'
 export * from './table.types'
 export * from './menu.types'
 export * from './user.types'
