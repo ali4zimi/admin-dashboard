@@ -1,4 +1,9 @@
 import tailwindcss from "@tailwindcss/vite";
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
+
+const require = createRequire(import.meta.url);
+const piniaEsm = join(dirname(require.resolve('pinia/package.json')), 'dist/pinia.mjs');
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
 export default defineNuxtConfig({
@@ -21,6 +26,11 @@ export default defineNuxtConfig({
     plugins: [
       tailwindcss(),
     ],
+    resolve: {
+      alias: {
+        pinia: piniaEsm,
+      },
+    },
   },
 
   runtimeConfig: {
