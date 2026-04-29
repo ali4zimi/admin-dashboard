@@ -40,6 +40,11 @@ const mapNestedItemDoc = (docItem: any): MenuItem => {
   } as MenuItem
 }
 
+const stripTimestamps = <T extends Record<string, any>>(item: T): Omit<T, 'createdAt' | 'updatedAt'> => {
+  const { createdAt, updatedAt, ...rest } = item
+  return rest
+}
+
 // ==================== Menu Items ====================
 
 export const fetchAllMenuItems = async (): Promise<MenuItem[]> => {
@@ -83,9 +88,9 @@ export const fetchAllMenuItems = async (): Promise<MenuItem[]> => {
     }
   })
 
-  return Array.from(deduped.values()).sort(
-    (a, b) => timestampToMillis((b as any).createdAt) - timestampToMillis((a as any).createdAt)
-  )
+  return Array.from(deduped.values())
+    .sort((a, b) => timestampToMillis((b as any).createdAt) - timestampToMillis((a as any).createdAt))
+    .map(item => stripTimestamps(item))
 }
 
 // ==================== Menu Categories ====================
@@ -112,7 +117,7 @@ export const fetchAllMenuCategories = async (): Promise<MenuCategory[]> => {
     } as MenuCategory)
   })
 
-  return Array.from(deduped.values()).sort(
-    (a, b) => timestampToMillis((b as any).createdAt) - timestampToMillis((a as any).createdAt)
-  )
+  return Array.from(deduped.values())
+    .sort((a, b) => timestampToMillis((b as any).createdAt) - timestampToMillis((a as any).createdAt))
+    .map(item => stripTimestamps(item))
 }
