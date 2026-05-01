@@ -14,6 +14,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // Skip middleware for auth pages (but redirect if already logged in)
   if (to.path === '/login' || to.path === '/register') {
     if (user.value) {
+      if (!currentUserProfile.value) {
+        await logout()
+        return
+      }
       return navigateTo('/')
     }
     return
@@ -21,6 +25,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // Redirect to login if not authenticated
   if (!user.value) {
+    return navigateTo('/login')
+  }
+
+  // Tenant membership gate: authenticated Firebase users must also have
+  // a profile under clients/{clientId}/users.
+  if (!currentUserProfile.value) {
+    await logout()
     return navigateTo('/login')
   }
 

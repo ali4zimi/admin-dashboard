@@ -17,6 +17,11 @@ export default defineNuxtPlugin(() => {
 
   const app = initializeApp(firebaseConfig)
   const auth = getAuth(app)
+  const tenantId = (config.public.firebaseTenantId as string | undefined)?.trim()
+  if (!tenantId) {
+    throw new Error('Firebase tenant ID not configured. Set FIREBASE_TENANT_ID in the environment.')
+  }
+  auth.tenantId = tenantId
   const firestore = getFirestore(app)
   const storage = getStorage(app)
 

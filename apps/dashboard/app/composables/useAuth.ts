@@ -62,6 +62,15 @@ export const useAuth = () => {
       const result = await signInWithEmailAndPassword(auth, email, password)
 
       const profile = await loadCurrentUserProfile(result.user)
+      if (!profile) {
+        await signOut(auth)
+        user.value = null
+        currentUserProfile.value = null
+        const tenantAccessError = { code: 'auth/not-in-tenant' }
+        error.value = getAuthErrorMessage(tenantAccessError.code)
+        throw tenantAccessError
+      }
+
       if (profile && profile.status !== 'active') {
         await signOut(auth)
         user.value = null
@@ -138,6 +147,7 @@ export const useAuth = () => {
       'auth/invalid-credential': 'Invalid email or password',
       'auth/too-many-requests': 'Too many attempts. Please try again later',
       'auth/user-inactive': 'Your account is inactive. Please contact an admin.',
+      'auth/not-in-tenant': 'You do not have access to this client application.',
     }
     return errorMessages[code] || 'An error occurred. Please try again'
   }

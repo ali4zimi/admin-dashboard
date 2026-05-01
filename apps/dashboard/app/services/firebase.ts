@@ -68,13 +68,13 @@ export const getStorage = (): FirebaseStorage => {
 
 /**
  * Read the per-deployment client (restaurant) ID from runtime config.
- * Throws if NUXT_PUBLIC_CLIENT_ID is not set — every deployment must be scoped to one client.
+ * Throws if CLIENT_ID is not set — every deployment must be scoped to one client.
  */
 export const getClientId = (): string => {
   const config = useRuntimeConfig()
   const clientId = (config.public.clientId as string | undefined)?.trim()
   if (!clientId) {
-    throw new Error('Client ID not configured. Set NUXT_PUBLIC_CLIENT_ID in the environment.')
+    throw new Error('Client ID not configured. Set CLIENT_ID in the environment.')
   }
   return clientId
 }
