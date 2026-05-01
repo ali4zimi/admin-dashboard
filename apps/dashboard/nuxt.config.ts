@@ -8,6 +8,7 @@ const piniaEsm = join(dirname(require.resolve('pinia/package.json')), 'dist/pini
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
+  ssr: false,
 
   app: {
     head: {

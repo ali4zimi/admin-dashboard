@@ -37,20 +37,40 @@ export const useAuth = () => {
   }
 
   const initAuth = () => {
+    error.value = null
     return new Promise<User | null>((resolve) => {
       if (!auth) {
+        error.value = 'Authentication service is not available. Please try again later.'
         authLoading.value = false
         resolve(null)
         return
       }
 
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        user.value = firebaseUser
-        await loadCurrentUserProfile(firebaseUser)
+      const finish = (firebaseUser: User | null) => {
         authLoading.value = false
         resolve(firebaseUser)
-        unsubscribe()
-      })
+      }
+
+      const unsubscribe = onAuthStateChanged(
+        auth,
+        async (firebaseUser) => {
+          try {
+            user.value = firebaseUser
+            await loadCurrentUserProfile(firebaseUser)
+            finish(firebaseUser)
+          } catch (e: any) {
+            error.value = e?.message || 'Unable to load your account. Please check your connection and try again.'
+            finish(null)
+          } finally {
+            unsubscribe()
+          }
+        },
+        (e) => {
+          error.value = e?.message || 'Unable to connect to the authentication service.'
+          finish(null)
+          unsubscribe()
+        },
+      )
     })
   }
 
