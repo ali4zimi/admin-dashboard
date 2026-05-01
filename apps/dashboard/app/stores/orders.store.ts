@@ -16,7 +16,7 @@ import type {
   OrderItemInput,
   OrderStatus,
   UpdateOrderData,
-} from '~/types/order.types'
+} from '@restaurant-platform/types/order.types'
 
 export const useOrdersStore = defineStore('orders', {
   state: () => ({

@@ -1,5 +1,5 @@
 import * as ClientService from '~/services/client.service'
-import type { ClientData } from '~/types/client.types'
+import type { ClientData } from '@restaurant-platform/types'
 
 export const useClient = () => {
   const client = useState<ClientData | null>('current-client', () => null)

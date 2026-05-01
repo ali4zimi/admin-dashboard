@@ -5,7 +5,7 @@
 
 import { getDoc } from 'firebase/firestore'
 import { clientRootDoc } from './firebase'
-import type { ClientData } from '~/types/client.types'
+import type { ClientData } from '@restaurant-platform/types'
 
 export const fetchClient = async (): Promise<ClientData | null> => {
   const ref = clientRootDoc()

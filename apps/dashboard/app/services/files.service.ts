@@ -23,7 +23,7 @@ import {
   where,
 } from 'firebase/firestore'
 import { clientCol, clientDoc, clientStoragePath, getStorage } from './firebase'
-import type { FileMetadataRecord } from '~/types/file.types'
+import type { FileMetadataRecord } from '@restaurant-platform/types/file.types'
 
 const FILES_COLLECTION = 'files'
 const MAX_THUMBNAIL_DIMENSION = 360

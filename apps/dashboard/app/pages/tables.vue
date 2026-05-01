@@ -180,7 +180,7 @@ import { useOrders } from '~/composables/restaurant/useOrders'
 import { useReservations } from '~/composables/restaurant/useReservations'
 import DeleteConfirmModal from '~/components/DeleteConfirmModal.vue'
 import TableFormModal from '~/components/restaurant/TableFormModal.vue'
-import type { Table, TableStatus } from '~/types/table.types'
+import type { Table, TableStatus } from '@restaurant-platform/types/table.types'
 
 useHead({
   title: 'Tables - Admin Panel'

@@ -13,7 +13,7 @@ import type {
   UpdateMenuItemData,
   CreateMenuCategoryData,
   UpdateMenuCategoryData,
-} from '~/types/menu.types'
+} from '@restaurant-platform/types'
 
 export const useMenuStore = defineStore('menu', {
   state: () => ({
@@ -335,4 +335,4 @@ export type {
   UpdateMenuItemData,
   CreateMenuCategoryData,
   UpdateMenuCategoryData,
-} from '~/types/menu.types'
+} from '@restaurant-platform/types'

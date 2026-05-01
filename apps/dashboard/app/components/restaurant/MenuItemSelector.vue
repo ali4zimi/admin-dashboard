@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import type { MenuItem } from '~/types/menu.types'
+import type { MenuItem } from '@restaurant-platform/types/menu.types'
 import { useRestaurantSettings } from '~/composables/useRestaurantSettings'
 
 interface Props {

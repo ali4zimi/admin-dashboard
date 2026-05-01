@@ -134,7 +134,7 @@ import type {
   OrderType,
   CreateOrderData,
   UpdateOrderData,
-} from '~/types/order.types'
+} from '@restaurant-platform/types/order.types'
 import MenuItemSelector from './MenuItemSelector.vue'
 import TableSelector from './TableSelector.vue'
 const { tables, fetchTables } = useTables()

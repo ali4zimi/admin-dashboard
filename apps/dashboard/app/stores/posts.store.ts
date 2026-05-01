@@ -12,7 +12,7 @@ import type {
   PostStatus,
   CreatePostData,
   UpdatePostData,
-} from '~/types/post.types'
+} from '@restaurant-platform/types/post.types'
 
 const GRADIENTS = [
   'from-blue-400 to-blue-600',

@@ -282,7 +282,7 @@
 </template>
 
 <script setup lang="ts">
-import type { FileData } from '~/types/file.types'
+import type { FileData } from '@restaurant-platform/types/file.types'
 
 useHead({
   title: 'File Management - Admin Panel'

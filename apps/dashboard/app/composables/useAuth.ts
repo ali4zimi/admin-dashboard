@@ -9,7 +9,7 @@ import {
 } from 'firebase/auth'
 
 import * as UsersService from '~/services/users.service'
-import type { UserData } from '~/types/user.types'
+import type { UserData } from '@restaurant-platform/types'
 
 export const useAuth = () => {
 

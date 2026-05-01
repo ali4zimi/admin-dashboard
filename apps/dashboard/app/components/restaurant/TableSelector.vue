@@ -56,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Table } from '~/types/table.types'
+import type { Table } from '@restaurant-platform/types/table.types'
 
 interface Props {
   modelValue: string | string[]

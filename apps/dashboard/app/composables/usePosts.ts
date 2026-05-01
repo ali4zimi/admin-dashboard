@@ -7,7 +7,7 @@
 
 import { storeToRefs } from 'pinia'
 import { usePostsStore } from '~/stores/posts.store'
-import type { PostData, CreatePostData, UpdatePostData } from '~/types/post.types'
+import type { PostData, CreatePostData, UpdatePostData } from '@restaurant-platform/types/post.types'
 
 export const usePosts = () => {
   const store = usePostsStore()

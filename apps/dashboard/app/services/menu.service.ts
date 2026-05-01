@@ -23,7 +23,7 @@ import type {
   UpdateMenuItemData,
   CreateMenuCategoryData,
   UpdateMenuCategoryData,
-} from '~/types/menu.types'
+} from '@restaurant-platform/types'
 
 const ITEMS_COLLECTION = 'menuItems'
 const MENU_COLLECTION = 'menu'

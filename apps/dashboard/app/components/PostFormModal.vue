@@ -133,8 +133,8 @@
 </template>
 
 <script setup lang="ts">
-import type { PostData } from '~/types/post.types'
-import type { FileData } from '~/types/file.types'
+import type { PostData } from '@restaurant-platform/types/post.types'
+import type { FileData } from '@restaurant-platform/types/file.types'
 
 interface Props {
   modelValue: boolean

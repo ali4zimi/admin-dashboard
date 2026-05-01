@@ -83,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import type { UserData } from '~/types/user.types'
+import type { UserData } from '@restaurant-platform/types/user.types'
 
 interface Props {
   modelValue: boolean

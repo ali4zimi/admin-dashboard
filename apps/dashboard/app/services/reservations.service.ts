@@ -14,7 +14,7 @@ import {
   updateDoc,
 } from 'firebase/firestore'
 import { clientCol, clientDoc } from './firebase'
-import type { CreateReservationData, Reservation, UpdateReservationData } from '~/types/reservation.types'
+import type { CreateReservationData, Reservation, UpdateReservationData } from '@restaurant-platform/types/reservation.types'
 
 const RESERVATION_COLLECTION = 'reservations'
 

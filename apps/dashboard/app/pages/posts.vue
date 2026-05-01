@@ -241,7 +241,7 @@
 </template>
 
 <script setup lang="ts">
-import type { PostData } from '~/types/post.types'
+import type { PostData } from '@restaurant-platform/types/post.types'
 
 useHead({
   title: 'Posts - Admin Panel'

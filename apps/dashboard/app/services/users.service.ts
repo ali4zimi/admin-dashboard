@@ -19,7 +19,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 import { clientCol, clientDoc } from './firebase'
-import type { UserData, UserRole, UserStatus, CreateUserData, UpdateUserData } from '~/types/user.types'
+import type { UserData, UserRole, UserStatus, CreateUserData, UpdateUserData } from '@restaurant-platform/types'
 
 const COLLECTION_NAME = 'users'
 

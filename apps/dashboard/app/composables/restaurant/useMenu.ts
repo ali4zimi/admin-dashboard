@@ -14,7 +14,7 @@ import type {
   UpdateMenuItemData,
   CreateMenuCategoryData,
   UpdateMenuCategoryData,
-} from '~/types/menu.types'
+} from '@restaurant-platform/types/menu.types'
 
 export type { 
   MenuItem, 

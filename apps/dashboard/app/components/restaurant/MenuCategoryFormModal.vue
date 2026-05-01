@@ -90,7 +90,7 @@
 import { ref, watch, computed } from 'vue'
 import { useMenu } from '~/composables/restaurant/useMenu'
 import { useFiles } from '~/composables/useFiles'
-import type { FileData } from '~/types/file.types'
+import type { FileData } from '@restaurant-platform/types/file.types'
 import BaseModal from '../BaseModal.vue'
 import FileUploadModal from '../FileUploadModal.vue'
 

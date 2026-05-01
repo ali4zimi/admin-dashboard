@@ -15,7 +15,7 @@ import {
   deleteField,
 } from 'firebase/firestore'
 import { clientCol, clientDoc } from './firebase'
-import type { Table, CreateTableData, UpdateTableData } from '~/types/table.types'
+import type { Table, CreateTableData, UpdateTableData } from '@restaurant-platform/types/table.types'
 
 const COLLECTION_NAME = 'tables'
 

@@ -4,7 +4,7 @@
 
 import { storeToRefs } from 'pinia'
 import { useOrdersStore } from '~/stores/orders.store'
-import type { CreateOrderData, OrderItem, UpdateOrderData } from '~/types/order.types'
+import type { CreateOrderData, OrderItem, UpdateOrderData } from '@restaurant-platform/types/order.types'
 
 export const useOrders = () => {
   const store = useOrdersStore()

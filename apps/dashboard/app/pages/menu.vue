@@ -279,7 +279,7 @@
 </template>
 
 <script setup lang="ts">
-import type { MenuCategory, MenuItem } from '~/types/menu.types'
+import type { MenuCategory, MenuItem } from '@restaurant-platform/types/menu.types'
 import { useMenu } from '~/composables/restaurant/useMenu'
 import { useRestaurantSettings } from '~/composables/useRestaurantSettings'
 

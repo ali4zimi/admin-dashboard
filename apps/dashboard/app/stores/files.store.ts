@@ -12,7 +12,7 @@ import type {
   FileMetadataRecord,
   StorageStats,
   UploadProgress,
-} from '~/types/file.types'
+} from '@restaurant-platform/types/file.types'
 
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes'

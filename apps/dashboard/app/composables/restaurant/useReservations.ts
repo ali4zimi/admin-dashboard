@@ -7,7 +7,7 @@ import { useReservationsStore } from '~/stores/reservations.store'
 import type {
   CreateReservationData,
   UpdateReservationData,
-} from '~/types/reservation.types'
+} from '@restaurant-platform/types/reservation.types'
 
 export const useReservations = () => {
   const store = useReservationsStore()

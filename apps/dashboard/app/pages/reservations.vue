@@ -198,7 +198,7 @@ import { useReservations } from '~/composables/restaurant/useReservations'
 import { useTables } from '~/composables/restaurant/useTables'
 import DeleteConfirmModal from '~/components/DeleteConfirmModal.vue'
 import ReservationFormModal from '~/components/restaurant/ReservationFormModal.vue'
-import type { Reservation, ReservationStatus } from '~/types/reservation.types'
+import type { Reservation, ReservationStatus } from '@restaurant-platform/types/reservation.types'
 
 useHead({
   title: 'Reservations - Admin Panel'

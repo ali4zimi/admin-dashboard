@@ -14,7 +14,7 @@ import {
   updateDoc,
 } from 'firebase/firestore'
 import { clientCol, clientDoc } from './firebase'
-import type { Order, OrderItem } from '~/types/order.types'
+import type { Order, OrderItem } from '@restaurant-platform/types/order.types'
 
 const ORDER_COLLECTION = 'orders'
 

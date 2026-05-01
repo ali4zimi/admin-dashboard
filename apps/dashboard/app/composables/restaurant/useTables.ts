@@ -7,7 +7,7 @@
 
 import { storeToRefs } from 'pinia'
 import { useTablesStore } from '~/stores/tables.store'
-import type { Table, TableStatus, CreateTableData, UpdateTableData } from '~/types/table.types'
+import type { Table, TableStatus, CreateTableData, UpdateTableData } from '@restaurant-platform/types/table.types'
 
 export type { Table, TableStatus, CreateTableData, UpdateTableData }
 

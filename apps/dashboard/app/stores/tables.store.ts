@@ -6,7 +6,7 @@
 
 import { defineStore } from 'pinia'
 import * as TablesService from '~/services/tables.service'
-import type { Table, TableStatus, CreateTableData, UpdateTableData } from '~/types/table.types'
+import type { Table, TableStatus, CreateTableData, UpdateTableData } from '@restaurant-platform/types/table.types'
 
 export const useTablesStore = defineStore('tables', {
   state: () => ({
@@ -179,4 +179,4 @@ export const useTablesStore = defineStore('tables', {
 })
 
 // Re-export types for convenience
-export type { Table, TableStatus, CreateTableData, UpdateTableData } from '~/types/table.types'
+export type { Table, TableStatus, CreateTableData, UpdateTableData } from '@restaurant-platform/types/table.types'

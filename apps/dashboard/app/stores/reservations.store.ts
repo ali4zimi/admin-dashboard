@@ -11,7 +11,7 @@ import type {
   Reservation,
   ReservationStatus,
   UpdateReservationData,
-} from '~/types/reservation.types'
+} from '@restaurant-platform/types/reservation.types'
 
 export const useReservationsStore = defineStore('reservations', {
   state: () => ({

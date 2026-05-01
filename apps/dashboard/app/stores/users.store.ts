@@ -12,7 +12,7 @@ import type {
   UserStatus,
   CreateUserData,
   UpdateUserData,
-} from '~/types/user.types'
+} from '@restaurant-platform/types/user.types'
 
 export const useUsersStore = defineStore('users', {
   state: () => ({

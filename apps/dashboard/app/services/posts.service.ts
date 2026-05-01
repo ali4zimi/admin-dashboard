@@ -14,7 +14,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 import { clientCol, clientDoc } from './firebase'
-import type { PostData, CreatePostData, UpdatePostData } from '~/types/post.types'
+import type { PostData, CreatePostData, UpdatePostData } from '@restaurant-platform/types/post.types'
 
 const COLLECTION_NAME = 'posts'
 
