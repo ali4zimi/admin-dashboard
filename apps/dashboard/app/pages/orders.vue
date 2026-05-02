@@ -1,23 +1,17 @@
 <template>
   <div>
-    <!-- Page header -->
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">Order Management</h1>
-        <p class="text-gray-600">Manage restaurant orders and their items.</p>
-      </div>
-      <div class="flex gap-2">
-        <button
-          class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-          @click="openAddModal"
-        >
-          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
+    <PageHeader title="Order Management" description="Manage restaurant orders and their items.">
+      <template #actions>
+        <BaseButton variant="primary" @click="openAddModal">
+          <template #icon-left>
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+          </template>
           Add Order
-        </button>
-      </div>
-    </div>
+        </BaseButton>
+      </template>
+    </PageHeader>
 
     <!-- Filter/Search -->
     <div class="mb-6 flex flex-col gap-4 rounded-lg bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
@@ -44,31 +38,27 @@
 
     <!-- Loading state -->
     <div v-if="loading" class="flex items-center justify-center rounded-lg bg-white p-12 shadow-sm">
-      <svg class="h-8 w-8 animate-spin text-blue-600" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-      </svg>
+      <BaseSpinner />
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="filteredOrders.length === 0" class="rounded-lg bg-white p-12 text-center shadow-sm">
-      <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+    <EmptyState v-else-if="filteredOrders.length === 0" title="No orders found" description="Add your first order to get started.">
+      <template #icon>
         <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
-      </div>
-      <h3 class="mb-1 text-lg font-medium text-gray-900">No orders found</h3>
-      <p class="mb-4 text-sm text-gray-500">Add your first order to get started.</p>
-      <button
-        class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-        @click="openAddModal"
-      >
-        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Add Order
-      </button>
-    </div>
+      </template>
+      <template #action>
+        <BaseButton variant="primary" @click="openAddModal">
+          <template #icon-left>
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+          </template>
+          Add Order
+        </BaseButton>
+      </template>
+    </EmptyState>
 
     <!-- Order list view -->
     <div v-else class="overflow-hidden rounded-lg bg-white shadow-sm">
@@ -96,16 +86,9 @@
               </td>
               <td class="px-4 py-4 align-top text-sm text-gray-500">{{ order.orderType }}</td>
               <td class="px-4 py-4 align-top">
-                <div class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                  :class="{
-                    'bg-yellow-100 text-yellow-800': order.status === 'pending',
-                    'bg-blue-100 text-blue-800': order.status === 'preparing',
-                    'bg-green-100 text-green-800': order.status === 'served',
-                    'bg-purple-100 text-purple-800': order.status === 'paid',
-                    'bg-red-100 text-red-800': order.status === 'cancelled',
-                  }">
+                <BaseBadge :color="orderStatusColor(order.status)">
                   {{ order.status.charAt(0).toUpperCase() + order.status.slice(1) }}
-                </div>
+                </BaseBadge>
               </td>
               <td class="px-4 py-4 align-top text-sm text-gray-500">
                 <div v-if="order.items && order.items.length > 0" class="flex flex-wrap gap-2">
@@ -122,22 +105,16 @@
               <td class="px-4 py-4 align-top text-sm font-medium text-gray-900">{{ formatCurrency(getOrderTotal(order)) }}</td>
               <td class="px-4 py-4 align-top text-right text-sm">
                 <div class="flex justify-end space-x-2">
-                  <button
-                    class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-blue-600"
-                    @click="openEditModal(order)"
-                  >
+                  <IconButton label="Edit order" tone="primary" @click="openEditModal(order)">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6-6a2 2 0 012.828 2.828l-6 6a2 2 0 01-2.828-2.828z" />
                     </svg>
-                  </button>
-                  <button
-                    class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-600"
-                    @click="openDeleteModal(order)"
-                  >
+                  </IconButton>
+                  <IconButton label="Delete order" tone="danger" @click="openDeleteModal(order)">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
-                  </button>
+                  </IconButton>
                 </div>
               </td>
             </tr>
@@ -206,6 +183,17 @@ const filteredOrders = computed(() => {
   }
   return items
 })
+
+const orderStatusColor = (status: string) => {
+  const map: Record<string, 'yellow' | 'blue' | 'green' | 'purple' | 'red' | 'gray'> = {
+    pending: 'yellow',
+    preparing: 'blue',
+    served: 'green',
+    paid: 'purple',
+    cancelled: 'red',
+  }
+  return map[status] ?? 'gray'
+}
 
 const getOrderTotal = (order: any) => {
   if (order?.items && order.items.length > 0) {

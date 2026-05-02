@@ -1,10 +1,6 @@
 <template>
   <div>
-    <!-- Page header -->
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
-      <p class="text-gray-600">Welcome back! Here's an overview of your admin panel.</p>
-    </div>
+    <PageHeader title="Dashboard" description="Welcome back! Here's an overview of your admin panel." class="mb-6" />
 
     <!-- Stats cards -->
     <div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

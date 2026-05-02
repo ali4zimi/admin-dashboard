@@ -1,10 +1,6 @@
 <template>
   <div>
-    <!-- Page header -->
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold text-gray-900">Tables</h1>
-      <p class="text-gray-600">Real-time table status and floor overview.</p>
-    </div>
+    <PageHeader title="Tables" description="Real-time table status and floor overview." class="mb-6" />
 
     <!-- Status summary + Add button -->
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -52,44 +48,39 @@
         </button>
       </div>
 
-      <button
-        class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-        @click="openAddModal"
-      >
-        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
+      <BaseButton variant="primary" @click="openAddModal">
+        <template #icon-left>
+          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </template>
         Add Table
-      </button>
+      </BaseButton>
     </div>
 
     <!-- Loading state -->
     <div v-if="loading" class="flex items-center justify-center rounded-lg bg-white p-12 shadow-sm">
-      <svg class="h-8 w-8 animate-spin text-blue-600" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-      </svg>
+      <BaseSpinner />
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="filteredTables.length === 0" class="rounded-lg bg-white p-12 text-center shadow-sm">
-      <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+    <EmptyState v-else-if="filteredTables.length === 0" title="No tables found" description="Add your first table to get started.">
+      <template #icon>
         <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
-      </div>
-      <h3 class="mb-1 text-lg font-medium text-gray-900">No tables found</h3>
-      <p class="mb-4 text-sm text-gray-500">Add your first table to get started.</p>
-      <button
-        class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-        @click="openAddModal"
-      >
-        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Add Table
-      </button>
-    </div>
+      </template>
+      <template #action>
+        <BaseButton variant="primary" @click="openAddModal">
+          <template #icon-left>
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+          </template>
+          Add Table
+        </BaseButton>
+      </template>
+    </EmptyState>
 
     <!-- Table grid view -->
     <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

@@ -1,22 +1,17 @@
 <template>
   <div>
-    <!-- Page header -->
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">User Management</h1>
-        <p class="text-gray-600">Manage and monitor user accounts.</p>
-      </div>
-      <button
-        v-if="isAdmin"
-        class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-        @click="openAddModal"
-      >
-        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-        Add User
-      </button>
-    </div>
+    <PageHeader title="User Management" description="Manage and monitor user accounts.">
+      <template v-if="isAdmin" #actions>
+        <BaseButton variant="primary" @click="openAddModal">
+          <template #icon-left>
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          </template>
+          Add User
+        </BaseButton>
+      </template>
+    </PageHeader>
 
     <!-- Filters -->
     <div class="mb-6 flex flex-col gap-4 rounded-lg bg-white p-4 shadow-sm sm:flex-row sm:items-center">
@@ -53,31 +48,27 @@
 
     <!-- Loading state -->
     <div v-if="loading" class="flex items-center justify-center rounded-lg bg-white p-12 shadow-sm">
-      <svg class="h-8 w-8 animate-spin text-blue-600" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-      </svg>
+      <BaseSpinner />
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="users.length === 0" class="rounded-lg bg-white p-12 text-center shadow-sm">
-      <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+    <EmptyState v-else-if="users.length === 0" title="No users found" description="Get started by adding your first user.">
+      <template #icon>
         <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
         </svg>
-      </div>
-      <h3 class="mb-1 text-lg font-medium text-gray-900">No users found</h3>
-      <p class="mb-4 text-sm text-gray-500">Get started by adding your first user.</p>
-      <button
-        class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-        @click="openAddModal"
-      >
-        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-        Add User
-      </button>
-    </div>
+      </template>
+      <template #action>
+        <BaseButton variant="primary" @click="openAddModal">
+          <template #icon-left>
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          </template>
+          Add User
+        </BaseButton>
+      </template>
+    </EmptyState>
 
     <!-- Users table -->
     <div v-else class="overflow-hidden rounded-lg bg-white shadow-sm">
@@ -109,49 +100,38 @@
               </td>
               <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ user.email }}</td>
               <td class="whitespace-nowrap px-6 py-4">
-                <span
-                  :class="[
-                    'inline-flex rounded-full px-2 py-1 text-xs font-semibold',
-                    user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
-                    'bg-gray-100 text-gray-800'
-                  ]"
-                >
+                <BaseBadge :color="user.role === 'admin' ? 'purple' : 'gray'">
                   {{ user.role === 'admin' ? 'Admin' : 'User' }}
-                </span>
+                </BaseBadge>
               </td>
               <td class="whitespace-nowrap px-6 py-4">
-                <span
-                  :class="[
-                    'inline-flex rounded-full px-2 py-1 text-xs font-semibold',
-                    user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  ]"
-                >
+                <BaseBadge :color="user.status === 'active' ? 'green' : 'red'">
                   {{ user.status === 'active' ? 'Active' : 'Inactive' }}
-                </span>
+                </BaseBadge>
               </td>
               <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ formatDate(user.createdAt) }}</td>
               <td class="whitespace-nowrap px-6 py-4 text-right text-sm">
                 <div class="flex justify-end space-x-2">
-                  <button
+                  <IconButton
                     v-if="isAdmin"
-                    class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-green-600"
-                    title="Edit user"
+                    label="Edit user"
+                    tone="success"
                     @click="openEditModal(user)"
                   >
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
-                  </button>
-                  <button
+                  </IconButton>
+                  <IconButton
                     v-if="isAdmin && user.id !== currentUserProfile?.id"
-                    class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-600"
-                    title="Delete user"
+                    label="Delete user"
+                    tone="danger"
                     @click="openDeleteModal(user)"
                   >
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
-                  </button>
+                  </IconButton>
                 </div>
               </td>
             </tr>

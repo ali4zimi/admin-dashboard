@@ -1,31 +1,20 @@
 <template>
   <div>
-    <!-- Page header -->
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">Restaurant Settings</h1>
-        <p class="text-gray-600">Configure core restaurant preferences including currency formatting.</p>
-      </div>
-    </div>
+    <PageHeader title="Restaurant Settings" description="Configure core restaurant preferences including currency formatting." />
 
     <!-- Loading state -->
     <div v-if="loading" class="flex items-center justify-center rounded-lg bg-white p-12 shadow-sm">
-      <svg class="h-8 w-8 animate-spin text-blue-600" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-      </svg>
+      <BaseSpinner />
     </div>
 
     <!-- Access state -->
-    <div v-else-if="!isAdmin" class="rounded-lg bg-white p-8 text-center shadow-sm">
-      <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+    <EmptyState v-else-if="!isAdmin" title="Access Restricted" description="Only admins can update restaurant settings.">
+      <template #icon>
         <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2h-1V9a5 5 0 00-10 0v2H6a2 2 0 00-2 2v6a2 2 0 002 2zm3-10V9a3 3 0 116 0v2H9z" />
         </svg>
-      </div>
-      <h3 class="mb-1 text-lg font-medium text-gray-900">Access Restricted</h3>
-      <p class="text-sm text-gray-500">Only admins can update restaurant settings.</p>
-    </div>
+      </template>
+    </EmptyState>
 
     <!-- Settings form -->
     <div v-else class="rounded-lg bg-white p-6 shadow-sm">
@@ -163,17 +152,14 @@
         <div class="flex items-center justify-between border-t border-gray-100 pt-4">
           <p class="text-xs text-gray-500">Last updated: {{ lastUpdatedLabel }}</p>
 
-          <button
+          <BaseButton
             type="submit"
-            :disabled="saving || loading"
-            class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            variant="primary"
+            :loading="saving"
+            :disabled="loading"
           >
-            <svg v-if="saving" class="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
             Save Settings
-          </button>
+          </BaseButton>
         </div>
 
         <p v-if="error" class="text-sm text-red-600">{{ error }}</p>

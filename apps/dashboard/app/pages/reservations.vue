@@ -1,10 +1,6 @@
 <template>
   <div>
-    <!-- Page header -->
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold text-gray-900">Reservations</h1>
-      <p class="text-gray-600">Manage reservations for your restaurant.</p>
-    </div>
+    <PageHeader title="Reservations" description="Manage reservations for your restaurant." class="mb-6" />
 
     <!-- Search + Add button -->
     <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -31,15 +27,14 @@
         </button>
       </div>
 
-      <button
-        class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-        @click="openAddModal"
-      >
-        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
+      <BaseButton variant="primary" @click="openAddModal">
+        <template #icon-left>
+          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </template>
         New Reservation
-      </button>
+      </BaseButton>
     </div>
 
     <!-- Filter tabs -->
@@ -60,31 +55,27 @@
 
     <!-- Loading state -->
     <div v-if="loading" class="flex items-center justify-center rounded-lg bg-white p-12 shadow-sm">
-      <svg class="h-8 w-8 animate-spin text-blue-600" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-      </svg>
+      <BaseSpinner />
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="filteredReservations.length === 0" class="rounded-lg bg-white p-12 text-center shadow-sm">
-      <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+    <EmptyState v-else-if="filteredReservations.length === 0" title="No reservations found" description="Add your first reservation to get started.">
+      <template #icon>
         <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
-      </div>
-      <h3 class="mb-1 text-lg font-medium text-gray-900">No reservations found</h3>
-      <p class="mb-4 text-sm text-gray-500">Add your first reservation to get started.</p>
-      <button
-        class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-        @click="openAddModal"
-      >
-        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        New Reservation
-      </button>
-    </div>
+      </template>
+      <template #action>
+        <BaseButton variant="primary" @click="openAddModal">
+          <template #icon-left>
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+          </template>
+          New Reservation
+        </BaseButton>
+      </template>
+    </EmptyState>
 
     <!-- Reservation table -->
     <div v-else class="overflow-hidden rounded-xl bg-white shadow-sm">
@@ -150,24 +141,16 @@
               </td>
               <td class="whitespace-nowrap px-6 py-4 text-right">
                 <div class="flex justify-end gap-2">
-                  <button
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600"
-                    title="Edit"
-                    @click="openEditModal(reservation)"
-                  >
+                  <IconButton label="Edit reservation" tone="primary" @click="openEditModal(reservation)">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6-6a2 2 0 112.828 2.828l-6 6a2 2 0 01-2.828-2.828z" />
                     </svg>
-                  </button>
-                  <button
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
-                    title="Delete"
-                    @click="openDeleteModal(reservation)"
-                  >
+                  </IconButton>
+                  <IconButton label="Delete reservation" tone="danger" @click="openDeleteModal(reservation)">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
-                  </button>
+                  </IconButton>
                 </div>
               </td>
             </tr>
