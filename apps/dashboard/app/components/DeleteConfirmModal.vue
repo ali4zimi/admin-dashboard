@@ -1,6 +1,6 @@
 <template>
-  <BaseModal v-model="isOpen" title="Confirm Delete" size="sm">
-    <div class="flex h-full flex-col items-center justify-center text-center">
+  <BaseModal v-model="isOpen" title="Confirm Delete" size="sm" placement="center">
+    <div class="flex flex-col items-center justify-center py-2 text-center">
       <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
         <Icon name="lucide:triangle-alert" class="h-6 w-6 text-red-600" />
       </div>

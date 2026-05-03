@@ -1,6 +1,6 @@
 <template>
   <Dialog :open="modelValue" @update:open="$emit('update:modelValue', $event)">
-    <DialogContent :size="size" class="flex flex-col">
+    <DialogContent :placement="placement" :size="size">
       <DialogHeader class="flex-row items-center justify-between gap-4">
         <DialogTitle>{{ title }}</DialogTitle>
         <DialogClose
@@ -27,10 +27,12 @@ interface Props {
   modelValue: boolean
   title: string
   size?: 'sm' | 'md' | 'lg' | 'xl'
+  placement?: 'right' | 'left' | 'center'
 }
 
 withDefaults(defineProps<Props>(), {
   size: 'md',
+  placement: 'right',
 })
 
 defineEmits<{
