@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(pnpm --filter @restaurant-platform/dashboard add @nuxt/icon @iconify-json/lucide 2>&1)",
+      "PowerShell(pnpm --filter @restaurant-platform/dashboard add -D shadcn-nuxt 2>&1)",
+      "PowerShell(pnpm --filter @restaurant-platform/dashboard add reka-ui class-variance-authority clsx tailwind-merge 2>&1)",
+      "PowerShell(pnpm --filter @restaurant-platform/dashboard add tw-animate-css 2>&1)",
+      "PowerShell($current = pnpm --filter @restaurant-platform/dashboard exec nuxt typecheck 2>&1 | Out-String; $errs = $current -split \"`n\" | Where-Object { $_ -match 'error TS' }; \"TOTAL: $\\($errs.Count\\)\"; \"`nin my files:\"; $errs | Where-Object { $_ -match 'pages/\\(users|posts|orders|menu|tables|reservations|restaurant-settings|index|login\\)|components/\\(BaseModal|BaseWizardModal|DeleteConfirmModal|base/|ui/\\)|layouts/default|lib/utils|packages/types/post' })"
+    ]
+  }
+}

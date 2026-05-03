@@ -56,88 +56,14 @@
       </div>
     </div>
 
-    <!-- Loading state -->
-    <div v-if="loading" class="flex items-center justify-center rounded-lg bg-white p-12 shadow-sm">
-      <BaseSpinner />
-    </div>
-
-    <!-- Empty state -->
-    <EmptyState v-else-if="filteredOrders.length === 0" title="No orders found" description="Add your first order to get started.">
-      <template #icon>
-        <Icon name="lucide:shopping-bag" class="h-6 w-6 text-gray-400" />
-      </template>
-      <template #action>
-        <BaseButton variant="primary" @click="openAddModal">
-          <template #icon-left>
-            <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
-          </template>
-          Add Order
-        </BaseButton>
-      </template>
-    </EmptyState>
-
-    <!-- Order list view -->
-    <div v-else class="overflow-hidden rounded-lg bg-white shadow-sm">
-        <table class="min-w-full table-fixed divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="w-24 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Order #</th>
-              <th class="w-28 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Table</th>
-              <th class="w-24 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Type</th>
-              <th class="w-28 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-              <th class="w-[38%] px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Items</th>
-              <th class="w-32 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Total</th>
-              <th class="w-24 px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200 bg-white">
-            <tr v-for="order in filteredOrders" :key="order.id" class="hover:bg-gray-50">
-              <td class="px-4 py-4 align-top">
-                <span class="text-sm font-medium text-blue-600">{{ order.orderNumber || 'N/A' }}</span>
-              </td>
-              <td class="px-4 py-4 align-top">
-                <div class="flex items-center">
-                  <span class="text-sm font-medium text-gray-900">{{ order.table?.name || 'N/A' }}</span>
-                </div>
-              </td>
-              <td class="px-4 py-4 align-top text-sm text-gray-500">{{ order.orderType }}</td>
-              <td class="px-4 py-4 align-top">
-                <BaseBadge :color="orderStatusColor(order.status)">
-                  {{ order.status.charAt(0).toUpperCase() + order.status.slice(1) }}
-                </BaseBadge>
-              </td>
-              <td class="px-4 py-4 align-top text-sm text-gray-500">
-                <div v-if="order.items && order.items.length > 0" class="flex flex-wrap gap-2">
-                  <div
-                    v-for="(item, index) in order.items"
-                    :key="`${order.id || 'order'}-item-${item.itemId || index}-${index}`"
-                    class="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700"
-                  >
-                    {{ item.quantity }} x {{ item.name || 'Unknown item' }}
-                  </div>
-                </div>
-                <span v-else class="text-gray-400 italic">No items</span>
-              </td>
-              <td class="px-4 py-4 align-top text-sm font-medium text-gray-900">{{ formatCurrency(getOrderTotal(order)) }}</td>
-              <td class="px-4 py-4 align-top text-right text-sm">
-                <div class="flex justify-end space-x-2">
-                  <IconButton label="Edit order" tone="primary" @click="openEditModal(order)">
-                    <Icon name="lucide:pencil" class="h-5 w-5" />
-                  </IconButton>
-                  <IconButton label="Delete order" tone="danger" @click="openDeleteModal(order)">
-                    <Icon name="lucide:trash-2" class="h-5 w-5" />
-                  </IconButton>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-    <!-- Results info -->
-    <div v-if="filteredOrders.length > 0" class="mt-6 text-center">
-      <p class="text-sm text-gray-500">Showing {{ filteredOrders.length }} orders</p>
-    </div>
+    <BaseDataTable
+      :columns="columns"
+      :data="filteredOrders"
+      :loading="loading"
+      :row-key="(o) => o.id ?? ''"
+      empty-title="No orders found"
+      empty-description="Adjust the filter or add your first order."
+    />
 
     <!-- Order Modal -->
     <OrderFormModal
@@ -157,10 +83,15 @@
 </template>
 
 <script setup lang="ts">
+import { h } from 'vue'
+import type { ColumnDef } from '@tanstack/vue-table'
 import { useOrders } from '~/composables/restaurant/useOrders'
 import { useRestaurantSettings } from '~/composables/useRestaurantSettings'
 import DeleteConfirmModal from '~/components/DeleteConfirmModal.vue'
 import OrderFormModal from '~/components/restaurant/OrderFormModal.vue'
+import BaseBadge from '~/components/base/BaseBadge.vue'
+import IconButton from '~/components/base/IconButton.vue'
+import { Icon } from '#components'
 
 useHead({
   title: 'Order Management - Admin Panel'
@@ -174,6 +105,7 @@ const {
 } = useOrders()
 
 const { formatCurrency, loadRestaurantSettings } = useRestaurantSettings()
+const toast = useToast()
 
 const searchTerm = ref('')
 const filterStatus = ref('')
@@ -247,14 +179,98 @@ const openAddModal = () => {
 }
 const handleOrderDeleted = async () => {
   if (orderToDelete.value) {
-    await deleteOrder(orderToDelete.value.id)
-    await fetchOrders()
+    const label = orderToDelete.value.orderNumber || orderToDelete.value.table?.name || 'Order'
+    try {
+      await deleteOrder(orderToDelete.value.id)
+      await fetchOrders()
+      toast.success(`Order ${label} deleted`)
+    } catch (e) {
+      toast.error('Failed to delete order', e instanceof Error ? e.message : undefined)
+    }
   }
   orderToDelete.value = null
 }
 const handleOrderCreated = async () => {
   await fetchOrders()
+  toast.success(editingOrder.value?.id ? 'Order updated' : 'Order created')
 }
+const columns: ColumnDef<any, any>[] = [
+  {
+    accessorKey: 'orderNumber',
+    header: 'Order #',
+    cell: ({ getValue }) => h('span', { class: 'text-sm font-medium text-blue-600' }, String(getValue() || 'N/A')),
+  },
+  {
+    id: 'table',
+    header: 'Table',
+    accessorFn: (row) => row.table?.name ?? '',
+    cell: ({ row }) => h('span', { class: 'text-sm font-medium text-gray-900' }, row.original.table?.name || 'N/A'),
+  },
+  {
+    accessorKey: 'orderType',
+    header: 'Type',
+    cell: ({ getValue }) => h('span', { class: 'text-sm text-gray-500' }, String(getValue() || '')),
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) =>
+      h(
+        BaseBadge as any,
+        { color: orderStatusColor(row.original.status) },
+        () => row.original.status.charAt(0).toUpperCase() + row.original.status.slice(1),
+      ),
+  },
+  {
+    id: 'items',
+    header: 'Items',
+    enableSorting: false,
+    cell: ({ row }) => {
+      const items = row.original.items
+      if (!items?.length) return h('span', { class: 'text-sm text-gray-400 italic' }, 'No items')
+      return h(
+        'div',
+        { class: 'flex flex-wrap gap-2' },
+        items.map((item: any, idx: number) =>
+          h(
+            'div',
+            {
+              key: `item-${item.itemId || idx}-${idx}`,
+              class: 'inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700',
+            },
+            `${item.quantity} x ${item.name || 'Unknown item'}`,
+          ),
+        ),
+      )
+    },
+  },
+  {
+    id: 'total',
+    header: 'Total',
+    accessorFn: (row) => getOrderTotal(row),
+    cell: ({ row }) => h('span', { class: 'text-sm font-medium text-gray-900' }, formatCurrency(getOrderTotal(row.original))),
+  },
+  {
+    id: 'actions',
+    header: 'Actions',
+    enableSorting: false,
+    meta: { align: 'right' },
+    cell: ({ row }) =>
+      h('div', { class: 'flex justify-end space-x-2' }, [
+        h(
+          IconButton as any,
+          { label: 'Edit order', tone: 'primary', onClick: () => openEditModal(row.original) },
+          () => h(Icon as any, { name: 'lucide:pencil', class: 'h-5 w-5' }),
+        ),
+        h(
+          IconButton as any,
+          { label: 'Delete order', tone: 'danger', onClick: () => openDeleteModal(row.original) },
+          () => h(Icon as any, { name: 'lucide:trash-2', class: 'h-5 w-5' }),
+        ),
+      ]),
+  },
+]
+
 onMounted(async () => {
   await loadRestaurantSettings()
   await fetchOrders()

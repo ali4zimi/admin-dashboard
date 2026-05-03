@@ -158,6 +158,8 @@
         <slot />
       </main>
     </div>
+
+    <Sonner />
   </div>
 </template>
 

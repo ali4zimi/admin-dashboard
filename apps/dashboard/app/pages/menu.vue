@@ -2,8 +2,8 @@
   <div>
     <PageHeader title="Menu Management" description="Create categories and add items quickly in one place." />
 
-    <div v-if="loading" class="flex items-center justify-center rounded-lg bg-white p-12 shadow-sm">
-      <BaseSpinner />
+    <div v-if="loading" class="space-y-3">
+      <Skeleton v-for="i in 4" :key="i" class="h-20 w-full rounded-lg" />
     </div>
 
     <div v-else class="space-y-3">
@@ -243,6 +243,7 @@ const {
 } = useMenu()
 
 const { formatCurrency, loadRestaurantSettings } = useRestaurantSettings()
+const toast = useToast()
 
 const showCategoryModal = ref(false)
 const showItemModal = ref(false)
@@ -376,31 +377,39 @@ const openDeleteItemModal = (item: MenuItem) => {
 }
 
 const handleCategorySaved = () => {
+  toast.success(editingCategory.value?.id ? 'Category updated' : 'Category created')
   showCategoryModal.value = false
   editingCategory.value = null
 }
 
 const handleItemSaved = () => {
+  toast.success(editingMenuItem.value?.id ? 'Menu item updated' : 'Menu item created')
   showItemModal.value = false
   editingMenuItem.value = null
 }
 
 const handleItemDeleted = async () => {
-  if (!itemToDelete.value?.id) {
-    return
+  if (!itemToDelete.value?.id) return
+  const name = itemToDelete.value.name || 'Item'
+  try {
+    await deleteMenuItem(itemToDelete.value.id)
+    toast.success(`${name} deleted`)
+  } catch (e) {
+    toast.error('Failed to delete item', e instanceof Error ? e.message : undefined)
   }
-
-  await deleteMenuItem(itemToDelete.value.id)
   itemToDelete.value = null
 }
 
 const handleCategoryDeleted = async () => {
-  if (!categoryToDelete.value?.id) {
-    return
+  if (!categoryToDelete.value?.id) return
+  const name = categoryToDelete.value.name || 'Category'
+  try {
+    await deleteMenuCategory(categoryToDelete.value.id)
+    openCategoryIds.value = openCategoryIds.value.filter((id) => id !== categoryToDelete.value?.id)
+    toast.success(`${name} deleted`)
+  } catch (e) {
+    toast.error('Failed to delete category', e instanceof Error ? e.message : undefined)
   }
-
-  await deleteMenuCategory(categoryToDelete.value.id)
-  openCategoryIds.value = openCategoryIds.value.filter((id) => id !== categoryToDelete.value?.id)
   categoryToDelete.value = null
 }
 

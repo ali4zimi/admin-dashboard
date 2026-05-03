@@ -47,103 +47,14 @@
       </button>
     </div>
 
-    <!-- Loading state -->
-    <div v-if="loading" class="flex items-center justify-center rounded-lg bg-white p-12 shadow-sm">
-      <BaseSpinner />
-    </div>
-
-    <!-- Empty state -->
-    <EmptyState v-else-if="filteredReservations.length === 0" title="No reservations found" description="Add your first reservation to get started.">
-      <template #icon>
-        <Icon name="lucide:calendar-days" class="h-6 w-6 text-gray-400" />
-      </template>
-      <template #action>
-        <BaseButton variant="primary" @click="openAddModal">
-          <template #icon-left>
-            <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
-          </template>
-          New Reservation
-        </BaseButton>
-      </template>
-    </EmptyState>
-
-    <!-- Reservation table -->
-    <div v-else class="overflow-hidden rounded-xl bg-white shadow-sm">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Customer</th>
-              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">When</th>
-              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Table</th>
-              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Party Size</th>
-              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Phone</th>
-              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-              <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200 bg-white">
-            <tr
-              v-for="reservation in filteredReservations"
-              :key="reservation.id"
-              class="hover:bg-gray-50"
-            >
-              <td class="whitespace-nowrap px-6 py-4">
-                <div class="flex items-center gap-3">
-                  <div
-                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-                    :class="avatarColor(reservation.customerName)"
-                  >
-                    {{ initials(reservation.customerName) }}
-                  </div>
-                  <span class="font-medium text-gray-900">{{ reservation.customerName }}</span>
-                </div>
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
-                {{ formatDateTime(reservation.startTime) }}
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
-                <div v-if="reservationTableNames(reservation).length" class="flex flex-wrap gap-1">
-                  <span
-                    v-for="name in reservationTableNames(reservation)"
-                    :key="`${reservation.id}-${name}`"
-                    class="inline-flex items-center rounded bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700"
-                  >
-                    {{ name }}
-                  </span>
-                </div>
-                <span v-else class="italic text-gray-400">—</span>
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
-                {{ reservation.partySize || '—' }}
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
-                {{ reservation.phone || '—' }}
-              </td>
-              <td class="whitespace-nowrap px-6 py-4">
-                <span
-                  class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
-                  :class="statusBadgeClass(reservation.status)"
-                >
-                  <span class="h-1.5 w-1.5 rounded-full" :class="statusDotClass(reservation.status)"></span>
-                  {{ formatStatus(reservation.status) }}
-                </span>
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-right">
-                <div class="flex justify-end gap-2">
-                  <IconButton label="Edit reservation" tone="primary" @click="openEditModal(reservation)">
-                    <Icon name="lucide:pencil" class="h-4 w-4" />
-                  </IconButton>
-                  <IconButton label="Delete reservation" tone="danger" @click="openDeleteModal(reservation)">
-                    <Icon name="lucide:trash-2" class="h-4 w-4" />
-                  </IconButton>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <BaseDataTable
+      :columns="columns"
+      :data="filteredReservations"
+      :loading="loading"
+      :row-key="(r) => r.id ?? ''"
+      empty-title="No reservations found"
+      empty-description="Add your first reservation to get started."
+    />
 
     <!-- Reservation Modal -->
     <ReservationFormModal
@@ -163,10 +74,14 @@
 </template>
 
 <script setup lang="ts">
+import { h } from 'vue'
+import type { ColumnDef } from '@tanstack/vue-table'
 import { useReservations } from '~/composables/restaurant/useReservations'
 import { useTables } from '~/composables/restaurant/useTables'
 import DeleteConfirmModal from '~/components/DeleteConfirmModal.vue'
 import ReservationFormModal from '~/components/restaurant/ReservationFormModal.vue'
+import IconButton from '~/components/base/IconButton.vue'
+import { Icon } from '#components'
 import type { Reservation, ReservationStatus } from '@restaurant-platform/types/reservation.types'
 
 useHead({
@@ -181,6 +96,7 @@ const {
 } = useReservations()
 
 const { tables, fetchTables } = useTables()
+const toast = useToast()
 
 const filterStatus = ref<ReservationStatus | ''>('')
 const searchTerm = ref('')
@@ -233,11 +149,19 @@ const openAddModal = () => {
 }
 const handleReservationDeleted = async () => {
   if (reservationToDelete.value?.id) {
-    await deleteReservation(reservationToDelete.value.id)
+    const name = reservationToDelete.value.customerName || 'Reservation'
+    try {
+      await deleteReservation(reservationToDelete.value.id)
+      toast.success(`Reservation for ${name} deleted`)
+    } catch (e) {
+      toast.error('Failed to delete reservation', e instanceof Error ? e.message : undefined)
+    }
   }
   reservationToDelete.value = null
 }
-const handleReservationCreated = async () => {}
+const handleReservationCreated = () => {
+  toast.success(editingReservation.value?.id ? 'Reservation updated' : 'Reservation created')
+}
 
 onMounted(async () => {
   await Promise.all([fetchReservations(), fetchTables()])
@@ -327,4 +251,103 @@ function statusDotClass(status: string): string {
     default:          return 'bg-gray-400'
   }
 }
+
+const reservationStartTimeValue = (r: Reservation): number => {
+  const v: any = r.startTime
+  if (!v) return 0
+  const d = v?.toDate ? v.toDate() : new Date(v)
+  return isNaN(d.getTime()) ? 0 : d.getTime()
+}
+
+const columns: ColumnDef<Reservation, any>[] = [
+  {
+    accessorKey: 'customerName',
+    header: 'Customer',
+    cell: ({ row }) =>
+      h('div', { class: 'flex items-center gap-3' }, [
+        h(
+          'div',
+          {
+            class: ['flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white', avatarColor(row.original.customerName)],
+            'aria-hidden': 'true',
+          },
+          initials(row.original.customerName),
+        ),
+        h('span', { class: 'font-medium text-gray-900' }, row.original.customerName),
+      ]),
+  },
+  {
+    id: 'startTime',
+    header: 'When',
+    accessorFn: (row) => reservationStartTimeValue(row),
+    cell: ({ row }) => h('span', { class: 'text-sm text-gray-600' }, formatDateTime(row.original.startTime)),
+  },
+  {
+    id: 'tables',
+    header: 'Table',
+    enableSorting: false,
+    cell: ({ row }) => {
+      const names = reservationTableNames(row.original)
+      if (!names.length) return h('span', { class: 'italic text-gray-400' }, '—')
+      return h(
+        'div',
+        { class: 'flex flex-wrap gap-1' },
+        names.map((name) =>
+          h(
+            'span',
+            {
+              key: `${row.original.id}-${name}`,
+              class: 'inline-flex items-center rounded bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700',
+            },
+            name,
+          ),
+        ),
+      )
+    },
+  },
+  {
+    accessorKey: 'partySize',
+    header: 'Party',
+    cell: ({ getValue }) => h('span', { class: 'text-sm text-gray-600' }, String(getValue() || '—')),
+  },
+  {
+    accessorKey: 'phone',
+    header: 'Phone',
+    cell: ({ getValue }) => h('span', { class: 'text-sm text-gray-600' }, String(getValue() || '—')),
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) =>
+      h(
+        'span',
+        {
+          class: ['inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium', statusBadgeClass(row.original.status)],
+        },
+        [
+          h('span', { class: ['h-1.5 w-1.5 rounded-full', statusDotClass(row.original.status)] }),
+          formatStatus(row.original.status),
+        ],
+      ),
+  },
+  {
+    id: 'actions',
+    header: 'Actions',
+    enableSorting: false,
+    meta: { align: 'right' },
+    cell: ({ row }) =>
+      h('div', { class: 'flex justify-end gap-2' }, [
+        h(
+          IconButton as any,
+          { label: 'Edit reservation', tone: 'primary', onClick: () => openEditModal(row.original) },
+          () => h(Icon as any, { name: 'lucide:pencil', class: 'h-4 w-4' }),
+        ),
+        h(
+          IconButton as any,
+          { label: 'Delete reservation', tone: 'danger', onClick: () => openDeleteModal(row.original) },
+          () => h(Icon as any, { name: 'lucide:trash-2', class: 'h-4 w-4' }),
+        ),
+      ]),
+  },
+]
 </script>

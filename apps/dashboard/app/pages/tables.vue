@@ -56,10 +56,8 @@
       </BaseButton>
     </div>
 
-    <!-- Loading state -->
-    <div v-if="loading" class="flex items-center justify-center rounded-lg bg-white p-12 shadow-sm">
-      <BaseSpinner />
-    </div>
+    <!-- Loading skeleton -->
+    <CardGridSkeleton v-if="loading" :count="8" :cols="4" />
 
     <!-- Empty state -->
     <EmptyState v-else-if="filteredTables.length === 0" title="No tables found" description="Add your first table to get started.">
@@ -172,6 +170,7 @@ const {
 
 const { orders, fetchOrders, getOrderById } = useOrders()
 const { reservations, fetchReservations, getReservationById } = useReservations()
+const toast = useToast()
 
 const filterStatus = ref<TableStatus | ''>('')
 const showTableModal = ref(false)
@@ -210,11 +209,19 @@ const openAddModal = () => {
 }
 const handleTableDeleted = async () => {
   if (tableToDelete.value?.id) {
-    await deleteTable(tableToDelete.value.id)
+    const name = tableToDelete.value.name || 'Table'
+    try {
+      await deleteTable(tableToDelete.value.id)
+      toast.success(`${name} deleted`)
+    } catch (e) {
+      toast.error('Failed to delete table', e instanceof Error ? e.message : undefined)
+    }
   }
   tableToDelete.value = null
 }
-const handleTableCreated = async () => {}
+const handleTableCreated = () => {
+  toast.success(editingTable.value?.id ? 'Table updated' : 'Table created')
+}
 
 onMounted(async () => {
   await Promise.all([

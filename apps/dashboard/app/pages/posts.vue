@@ -82,10 +82,9 @@
       </div>
     </div>
 
-    <!-- Loading state -->
-    <div v-if="loading" class="flex items-center justify-center rounded-lg bg-white p-12 shadow-sm">
-      <BaseSpinner />
-    </div>
+    <!-- Loading skeletons -->
+    <CardGridSkeleton v-if="loading && viewMode === 'grid'" :count="6" :cols="3" />
+    <TableSkeleton v-else-if="loading && viewMode === 'list'" :columns="6" :rows="6" />
 
     <!-- Empty state -->
     <EmptyState v-else-if="posts.length === 0" title="No posts found" description="Get started by creating your first post.">
@@ -103,7 +102,7 @@
     </EmptyState>
 
     <!-- Posts grid view -->
-    <div v-if="viewMode === 'grid' && posts.length > 0" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div v-else-if="viewMode === 'grid'" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       <article
         v-for="post in filteredPosts"
         :key="post.id"
@@ -144,54 +143,14 @@
     </div>
 
     <!-- Posts list view -->
-    <div v-else-if="viewMode === 'list' && posts.length > 0" class="overflow-hidden rounded-lg bg-white shadow-sm">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Title</th>
-            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Category</th>
-            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Author</th>
-            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Date</th>
-            <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200 bg-white">
-          <tr v-for="post in filteredPosts" :key="post.id" class="hover:bg-gray-50">
-            <td class="px-6 py-4">
-              <div class="flex items-center gap-3">
-                <div v-if="post.cover" class="h-10 w-14 overflow-hidden rounded border border-gray-200 bg-gray-100">
-                  <img :src="post.coverThumbnail || post.cover" :alt="post.title" class="h-full w-full object-cover" />
-                </div>
-                <div v-else class="h-10 w-14 rounded bg-gradient-to-br" :class="post.gradient || 'from-blue-400 to-blue-600'" />
-                <span class="truncate text-sm font-medium text-gray-900">{{ post.title }}</span>
-              </div>
-            </td>
-            <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ post.category }}</td>
-            <td class="whitespace-nowrap px-6 py-4">
-              <BaseBadge :color="postStatusColor(post.status)">{{ post.status }}</BaseBadge>
-            </td>
-            <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ post.author }}</td>
-            <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ formatDate(post.date) }}</td>
-            <td class="whitespace-nowrap px-6 py-4 text-right text-sm">
-              <div class="flex justify-end space-x-2">
-                <IconButton label="Edit post" tone="primary" @click="openEditModal(post)">
-                  <Icon name="lucide:pencil" class="h-4 w-4" />
-                </IconButton>
-                <IconButton label="Delete post" tone="danger" @click="openDeleteModal(post)">
-                  <Icon name="lucide:trash-2" class="h-4 w-4" />
-                </IconButton>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Results info -->
-    <div v-if="posts.length > 0" class="mt-6 text-center">
-      <p class="text-sm text-gray-500">Showing {{ posts.length }} posts</p>
-    </div>
+    <BaseDataTable
+      v-else-if="viewMode === 'list'"
+      :columns="postColumns"
+      :data="filteredPosts"
+      :row-key="(p) => p.id ?? ''"
+      empty-title="No posts found"
+      empty-description="Adjust the filter or create a post."
+    />
 
     <PostFormModal
       v-model="showPostModal"
@@ -210,11 +169,17 @@
 </template>
 
 <script setup lang="ts">
+import { h } from 'vue'
+import type { ColumnDef } from '@tanstack/vue-table'
 import { POST_CATEGORIES, POST_STATUSES, type PostData, type PostStatus } from '@restaurant-platform/types/post.types'
+import BaseBadge from '~/components/base/BaseBadge.vue'
+import IconButton from '~/components/base/IconButton.vue'
+import { Icon } from '#components'
 
 useHead({ title: 'Posts - Admin Panel' })
 
 const { posts, loading, fetchPosts, searchPosts, deletePost } = usePosts()
+const toast = useToast()
 
 const postStatusColor = (status: PostStatus): 'green' | 'yellow' | 'gray' => {
   if (status === 'Published') return 'green'
@@ -259,11 +224,19 @@ const openDeleteModal = (post: PostData) => {
   showDeleteModal.value = true
 }
 
-const handlePostSaved = () => {}
+const handlePostSaved = () => {
+  toast.success(selectedPost.value ? 'Post updated' : 'Post created')
+}
 
 const handlePostDeleted = async () => {
+  const title = postToDelete.value?.title || 'Post'
   if (postToDelete.value?.id) {
-    await deletePost(postToDelete.value.id)
+    try {
+      await deletePost(postToDelete.value.id)
+      toast.success(`${title} deleted`)
+    } catch (e) {
+      toast.error('Failed to delete post', e instanceof Error ? e.message : undefined)
+    }
   }
   postToDelete.value = null
 }
@@ -292,6 +265,71 @@ const formatDate = (date: any) => {
   if (isNaN(d.getTime())) return '-'
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
+
+const dateValue = (date: any): number => {
+  if (!date) return 0
+  const d = date?.toDate ? date.toDate() : new Date(date)
+  return isNaN(d.getTime()) ? 0 : d.getTime()
+}
+
+const postColumns: ColumnDef<PostData, any>[] = [
+  {
+    accessorKey: 'title',
+    header: 'Title',
+    cell: ({ row }) => {
+      const post = row.original
+      const cover = post.cover
+        ? h('div', { class: 'h-10 w-14 overflow-hidden rounded border border-gray-200 bg-gray-100' }, [
+            h('img', { src: post.coverThumbnail || post.cover, alt: post.title, class: 'h-full w-full object-cover' }),
+          ])
+        : h('div', { class: ['h-10 w-14 rounded bg-gradient-to-br', post.gradient || 'from-blue-400 to-blue-600'] })
+      return h('div', { class: 'flex items-center gap-3' }, [
+        cover,
+        h('span', { class: 'truncate text-sm font-medium text-gray-900' }, post.title),
+      ])
+    },
+  },
+  {
+    accessorKey: 'category',
+    header: 'Category',
+    cell: ({ getValue }) => h('span', { class: 'text-sm text-gray-500' }, String(getValue() || '')),
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => h(BaseBadge as any, { color: postStatusColor(row.original.status) }, () => row.original.status),
+  },
+  {
+    accessorKey: 'author',
+    header: 'Author',
+    cell: ({ getValue }) => h('span', { class: 'text-sm text-gray-500' }, String(getValue() || '')),
+  },
+  {
+    id: 'date',
+    header: 'Date',
+    accessorFn: (row) => dateValue(row.date),
+    cell: ({ row }) => h('span', { class: 'text-sm text-gray-500' }, formatDate(row.original.date)),
+  },
+  {
+    id: 'actions',
+    header: 'Actions',
+    enableSorting: false,
+    meta: { align: 'right' },
+    cell: ({ row }) =>
+      h('div', { class: 'flex justify-end space-x-2' }, [
+        h(
+          IconButton as any,
+          { label: 'Edit post', tone: 'primary', onClick: () => openEditModal(row.original) },
+          () => h(Icon as any, { name: 'lucide:pencil', class: 'h-4 w-4' }),
+        ),
+        h(
+          IconButton as any,
+          { label: 'Delete post', tone: 'danger', onClick: () => openDeleteModal(row.original) },
+          () => h(Icon as any, { name: 'lucide:trash-2', class: 'h-4 w-4' }),
+        ),
+      ]),
+  },
+]
 
 onMounted(() => {
   fetchPosts()

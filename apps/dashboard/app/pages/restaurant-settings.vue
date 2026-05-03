@@ -2,9 +2,13 @@
   <div>
     <PageHeader title="Restaurant Settings" description="Configure core restaurant preferences including currency formatting." />
 
-    <!-- Loading state -->
-    <div v-if="loading" class="flex items-center justify-center rounded-lg bg-white p-12 shadow-sm">
-      <BaseSpinner />
+    <!-- Loading skeleton -->
+    <div v-if="loading" class="space-y-4 rounded-lg bg-white p-6 shadow-sm">
+      <Skeleton class="h-6 w-40" />
+      <div class="grid gap-4 sm:grid-cols-2">
+        <Skeleton v-for="i in 4" :key="i" class="h-10 w-full" />
+      </div>
+      <Skeleton class="h-20 w-full" />
     </div>
 
     <!-- Access state -->
@@ -194,6 +198,7 @@ useHead({
 
 const { firestore } = useFirebase()
 const { isAdmin } = useAuth()
+const toast = useToast()
 
 const loading = ref(false)
 const saving = ref(false)
@@ -285,8 +290,11 @@ const saveSettings = async () => {
 
     lastUpdated.value = new Date()
     successMessage.value = 'Settings saved successfully.'
+    toast.success('Settings saved')
   } catch (e: any) {
-    error.value = e?.message || 'Failed to save restaurant settings'
+    const msg = e?.message || 'Failed to save restaurant settings'
+    error.value = msg
+    toast.error('Failed to save settings', msg)
   } finally {
     saving.value = false
   }

@@ -61,100 +61,14 @@
       </div>
     </div>
 
-    <!-- Loading state -->
-    <div v-if="loading" class="flex items-center justify-center rounded-lg bg-white p-12 shadow-sm">
-      <BaseSpinner />
-    </div>
-
-    <!-- Empty state -->
-    <EmptyState v-else-if="users.length === 0" title="No users found" description="Get started by adding your first user.">
-      <template #icon>
-        <Icon name="lucide:user-plus" class="h-6 w-6 text-gray-400" />
-      </template>
-      <template #action>
-        <BaseButton variant="primary" @click="openAddModal">
-          <template #icon-left>
-            <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
-          </template>
-          Add User
-        </BaseButton>
-      </template>
-    </EmptyState>
-
-    <!-- Users table -->
-    <div v-else class="overflow-hidden rounded-lg bg-white shadow-sm">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">User</th>
-              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Email</th>
-              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Role</th>
-              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Joined</th>
-              <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200 bg-white">
-            <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50">
-              <td class="whitespace-nowrap px-6 py-4">
-                <div class="flex items-center">
-                  <div
-                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
-                    :class="avatarColor(userLabel(user))"
-                    aria-hidden="true"
-                  >
-                    {{ initials(userLabel(user)) }}
-                  </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">{{ userLabel(user) }}</div>
-                  </div>
-                </div>
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ user.email }}</td>
-              <td class="whitespace-nowrap px-6 py-4">
-                <BaseBadge :color="user.role === 'admin' ? 'purple' : 'gray'">
-                  {{ user.role === 'admin' ? 'Admin' : 'User' }}
-                </BaseBadge>
-              </td>
-              <td class="whitespace-nowrap px-6 py-4">
-                <BaseBadge :color="user.status === 'active' ? 'green' : 'red'">
-                  {{ user.status === 'active' ? 'Active' : 'Inactive' }}
-                </BaseBadge>
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ formatDate(user.createdAt) }}</td>
-              <td class="whitespace-nowrap px-6 py-4 text-right text-sm">
-                <div class="flex justify-end space-x-2">
-                  <IconButton
-                    v-if="isAdmin"
-                    label="Edit user"
-                    tone="success"
-                    @click="openEditModal(user)"
-                  >
-                    <Icon name="lucide:pencil" class="h-5 w-5" />
-                  </IconButton>
-                  <IconButton
-                    v-if="isAdmin && user.id !== currentUserProfile?.id"
-                    label="Delete user"
-                    tone="danger"
-                    @click="openDeleteModal(user)"
-                  >
-                    <Icon name="lucide:trash-2" class="h-5 w-5" />
-                  </IconButton>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Results info -->
-      <div class="border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
-        <p class="text-sm text-gray-700">
-          Showing <span class="font-medium">{{ users.length }}</span> users
-        </p>
-      </div>
-    </div>
+    <BaseDataTable
+      :columns="columns"
+      :data="users"
+      :loading="loading"
+      :row-key="(u) => u.id ?? ''"
+      empty-title="No users found"
+      empty-description="Try adjusting your filters or add a new user."
+    />
 
     <UserFormModal
       v-model="showUserModal"
@@ -173,12 +87,18 @@
 </template>
 
 <script setup lang="ts">
+import { h } from 'vue'
+import type { ColumnDef } from '@tanstack/vue-table'
 import type { UserData } from '@restaurant-platform/types/user.types'
+import BaseBadge from '~/components/base/BaseBadge.vue'
+import IconButton from '~/components/base/IconButton.vue'
+import { Icon } from '#components'
 
 useHead({ title: 'User Management - Admin Panel' })
 
 const { users, loading, fetchUsers, searchUsers, deleteUser } = useUsers()
 const { isAdmin, currentUserProfile } = useAuth()
+const toast = useToast()
 
 const searchTerm = ref('')
 const filterRole = ref('All Roles')
@@ -233,11 +153,19 @@ const openDeleteModal = (user: UserData) => {
   showDeleteModal.value = true
 }
 
-const handleUserSaved = () => {}
+const handleUserSaved = () => {
+  toast.success(selectedUser.value ? 'User updated' : 'User created')
+}
 
 const handleUserDeleted = async () => {
+  const name = userToDelete.value?.displayName || userToDelete.value?.email || 'User'
   if (userToDelete.value?.id) {
-    await deleteUser(userToDelete.value.id)
+    try {
+      await deleteUser(userToDelete.value.id)
+      toast.success(`${name} deleted`)
+    } catch (e) {
+      toast.error('Failed to delete user', e instanceof Error ? e.message : undefined)
+    }
   }
   userToDelete.value = null
 }
@@ -281,6 +209,102 @@ const formatDate = (date: any) => {
   if (isNaN(d.getTime())) return '-'
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
+
+const dateValue = (date: any): number => {
+  if (!date) return 0
+  const d = date?.toDate ? date.toDate() : new Date(date)
+  return isNaN(d.getTime()) ? 0 : d.getTime()
+}
+
+const columns: ColumnDef<UserData, any>[] = [
+  {
+    accessorFn: (row) => userLabel(row),
+    id: 'name',
+    header: 'User',
+    cell: ({ row }) => {
+      const label = userLabel(row.original)
+      return h('div', { class: 'flex items-center' }, [
+        h(
+          'div',
+          {
+            class: ['flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white', avatarColor(label)],
+            'aria-hidden': 'true',
+          },
+          initials(label),
+        ),
+        h('div', { class: 'ml-4 text-sm font-medium text-gray-900' }, label),
+      ])
+    },
+  },
+  {
+    accessorKey: 'email',
+    header: 'Email',
+    cell: ({ getValue }) => h('span', { class: 'text-sm text-gray-500' }, String(getValue() ?? '')),
+  },
+  {
+    accessorKey: 'role',
+    header: 'Role',
+    cell: ({ row }) =>
+      h(
+        BaseBadge as any,
+        { color: row.original.role === 'admin' ? 'purple' : 'gray' },
+        () => (row.original.role === 'admin' ? 'Admin' : 'User'),
+      ),
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) =>
+      h(
+        BaseBadge as any,
+        { color: row.original.status === 'active' ? 'green' : 'red' },
+        () => (row.original.status === 'active' ? 'Active' : 'Inactive'),
+      ),
+  },
+  {
+    id: 'createdAt',
+    header: 'Joined',
+    accessorFn: (row) => dateValue(row.createdAt),
+    cell: ({ row }) => h('span', { class: 'text-sm text-gray-500' }, formatDate(row.original.createdAt)),
+  },
+  {
+    id: 'actions',
+    header: 'Actions',
+    enableSorting: false,
+    meta: { align: 'right' },
+    cell: ({ row }) => {
+      const user = row.original
+      const buttons = []
+      if (isAdmin.value) {
+        buttons.push(
+          h(
+            IconButton as any,
+            {
+              label: 'Edit user',
+              tone: 'success',
+              onClick: () => openEditModal(user),
+            },
+            () => h(Icon as any, { name: 'lucide:pencil', class: 'h-5 w-5' }),
+          ),
+        )
+      }
+      if (isAdmin.value && user.id !== currentUserProfile.value?.id) {
+        buttons.push(
+          h(
+            IconButton as any,
+            {
+              label: 'Delete user',
+              tone: 'danger',
+              onClick: () => openDeleteModal(user),
+            },
+            () => h(Icon as any, { name: 'lucide:trash-2', class: 'h-5 w-5' }),
+          ),
+        )
+      }
+      return h('div', { class: 'flex justify-end space-x-2' }, buttons)
+    },
+  },
+]
 
 onMounted(() => {
   fetchUsers()
