@@ -1,7 +1,7 @@
 /**
  * Files Service - Raw Firebase operations for file storage and metadata.
  * Firestore docs live under clients/{clientId}/files.
- * Storage objects live under {clientId}/<caller-supplied path>.
+ * Storage objects live under clients/{clientId}/<caller-supplied path>.
  */
 
 import {

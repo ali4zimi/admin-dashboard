@@ -107,9 +107,10 @@ export const clientDoc = (...segments: [string, string, ...string[]]): DocumentR
 }
 
 /**
- * Prefix a Storage path with the current client ID, e.g. "uploads" → "{clientId}/uploads".
+ * Prefix a Storage path with the current client ID, e.g. "uploads" → "clients/{clientId}/uploads".
  */
 export const clientStoragePath = (path: string): string => {
   const cleaned = String(path || '').replace(/^\/+|\/+$/g, '')
-  return cleaned ? `${getClientId()}/${cleaned}` : getClientId()
+  const base = `${CLIENTS_ROOT}/${getClientId()}`
+  return cleaned ? `${base}/${cleaned}` : base
 }
