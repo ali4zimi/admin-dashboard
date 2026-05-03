@@ -1,7 +1,10 @@
 import type { Timestamp } from 'firebase/firestore'
 
-export type PostCategory = 'Technology' | 'Business' | 'Design' | 'Marketing'
-export type PostStatus = 'Published' | 'Draft' | 'Archived'
+export const POST_CATEGORIES = ['Technology', 'Business', 'Design', 'Marketing'] as const
+export type PostCategory = typeof POST_CATEGORIES[number]
+
+export const POST_STATUSES = ['Published', 'Draft', 'Archived'] as const
+export type PostStatus = typeof POST_STATUSES[number]
 
 export interface PostData {
   id?: string

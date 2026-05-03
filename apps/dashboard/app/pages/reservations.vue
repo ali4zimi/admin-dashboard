@@ -5,9 +5,7 @@
     <!-- Search + Add button -->
     <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div class="relative w-full sm:max-w-sm">
-        <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
+        <Icon name="lucide:search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <input
           v-model="searchTerm"
           type="text"
@@ -21,17 +19,13 @@
           aria-label="Clear search"
           @click="searchTerm = ''"
         >
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <Icon name="lucide:x" class="h-4 w-4" />
         </button>
       </div>
 
       <BaseButton variant="primary" @click="openAddModal">
         <template #icon-left>
-          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
+          <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
         </template>
         New Reservation
       </BaseButton>
@@ -61,16 +55,12 @@
     <!-- Empty state -->
     <EmptyState v-else-if="filteredReservations.length === 0" title="No reservations found" description="Add your first reservation to get started.">
       <template #icon>
-        <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
+        <Icon name="lucide:calendar-days" class="h-6 w-6 text-gray-400" />
       </template>
       <template #action>
         <BaseButton variant="primary" @click="openAddModal">
           <template #icon-left>
-            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
+            <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
           </template>
           New Reservation
         </BaseButton>
@@ -142,14 +132,10 @@
               <td class="whitespace-nowrap px-6 py-4 text-right">
                 <div class="flex justify-end gap-2">
                   <IconButton label="Edit reservation" tone="primary" @click="openEditModal(reservation)">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6-6a2 2 0 112.828 2.828l-6 6a2 2 0 01-2.828-2.828z" />
-                    </svg>
+                    <Icon name="lucide:pencil" class="h-4 w-4" />
                   </IconButton>
                   <IconButton label="Delete reservation" tone="danger" @click="openDeleteModal(reservation)">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                    <Icon name="lucide:trash-2" class="h-4 w-4" />
                   </IconButton>
                 </div>
               </td>

@@ -13,11 +13,10 @@
             v-model="searchTerm"
             type="text"
             placeholder="Search categories or menu items..."
-            class="w-full rounded-lg border border-gray-300 px-4 py-2 pl-10 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            class="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            aria-label="Search menu"
           />
-          <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+          <Icon name="lucide:search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         </div>
         <select
           v-model="selectedCategoryId"
@@ -62,14 +61,7 @@
               class="drag-handle flex cursor-grab items-center text-gray-400 hover:text-gray-600"
               @pointerdown.stop.prevent="onPointerDown(index, $event)"
             >
-              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="9" cy="6" r="1.5" />
-                <circle cx="15" cy="6" r="1.5" />
-                <circle cx="9" cy="12" r="1.5" />
-                <circle cx="15" cy="12" r="1.5" />
-                <circle cx="9" cy="18" r="1.5" />
-                <circle cx="15" cy="18" r="1.5" />
-              </svg>
+              <Icon name="lucide:grip-vertical" class="h-5 w-5" />
             </div>
             <div class="h-12 w-12 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
               <img
@@ -79,9 +71,7 @@
                 class="h-full w-full object-cover"
               />
               <div v-else class="flex h-full w-full items-center justify-center text-gray-400">
-                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M7 3v4m10-4v4M6 21h12a2 2 0 002-2V7H4v12a2 2 0 002 2z" />
-                </svg>
+                <Icon name="lucide:image" class="h-6 w-6" />
               </div>
             </div>
             <div class="min-w-0">
@@ -97,9 +87,7 @@
               @click.stop
               @click="openEditCategoryModal(category)"
             >
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6-6a2 2 0 012.828 2.828l-6 6a2 2 0 01-2.828-2.828z" />
-              </svg>
+              <Icon name="lucide:pencil" class="h-5 w-5" />
             </IconButton>
             <IconButton
               label="Delete category"
@@ -107,19 +95,13 @@
               @click.stop
               @click="openDeleteCategoryModal(category)"
             >
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
+              <Icon name="lucide:trash-2" class="h-5 w-5" />
             </IconButton>
-            <svg
+            <Icon
+              name="lucide:chevron-down"
               class="h-5 w-5 text-gray-500 transition-transform"
               :class="isCategoryOpen(category.id!) ? 'rotate-180' : ''"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
+            />
           </div>
         </button>
 
@@ -128,9 +110,7 @@
             <p class="text-sm text-gray-600">Add and manage items inside {{ category.name }}.</p>
             <BaseButton variant="primary" size="sm" @click="openAddItemModal(category.id!)">
               <template #icon-left>
-                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
+                <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
               </template>
               Add Menu Item
             </BaseButton>
@@ -158,14 +138,7 @@
                   class="drag-handle flex cursor-grab items-center text-gray-400 hover:text-gray-600"
                   @pointerdown.stop.prevent="onItemPointerDown(category.id!, itemIndex, $event)"
                 >
-                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="9" cy="6" r="1.5" />
-                    <circle cx="15" cy="6" r="1.5" />
-                    <circle cx="9" cy="12" r="1.5" />
-                    <circle cx="15" cy="12" r="1.5" />
-                    <circle cx="9" cy="18" r="1.5" />
-                    <circle cx="15" cy="18" r="1.5" />
-                  </svg>
+                  <Icon name="lucide:grip-vertical" class="h-4 w-4" />
                 </div>
                 <div class="h-11 w-11 overflow-hidden rounded border border-gray-200 bg-gray-100">
                   <img
@@ -175,9 +148,7 @@
                     class="h-full w-full object-cover"
                   />
                   <div v-else class="flex h-full w-full items-center justify-center text-gray-400">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M7 3v4m10-4v4M6 21h12a2 2 0 002-2V7H4v12a2 2 0 002 2z" />
-                    </svg>
+                    <Icon name="lucide:image" class="h-5 w-5" />
                   </div>
                 </div>
                 <div class="min-w-0">
@@ -197,14 +168,10 @@
                 </div>
                 <span v-else class="text-sm font-semibold text-gray-900">{{ formatCurrency(item.price) }}</span>
                 <IconButton label="Edit item" tone="primary" @click="openEditItemModal(item)">
-                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6-6a2 2 0 012.828 2.828l-6 6a2 2 0 01-2.828-2.828z" />
-                  </svg>
+                  <Icon name="lucide:pencil" class="h-5 w-5" />
                 </IconButton>
                 <IconButton label="Delete item" tone="danger" @click="openDeleteItemModal(item)">
-                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
+                  <Icon name="lucide:trash-2" class="h-5 w-5" />
                 </IconButton>
               </div>
             </div>
@@ -218,9 +185,7 @@
           class="flex w-full items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
           @click="openCreateCategoryModal"
         >
-          <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
+          <Icon name="lucide:plus" class="mr-2 h-5 w-5" />
           Create Category
         </button>
       </div>

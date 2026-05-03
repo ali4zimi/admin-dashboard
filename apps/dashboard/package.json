@@ -11,15 +11,23 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@iconify-json/lucide": "^1.2.105",
+    "@nuxt/icon": "^2.2.1",
     "@pinia/nuxt": "^0.11.3",
     "@tailwindcss/vite": "^4.2.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "firebase": "^12.9.0",
     "nuxt": "^4.3.1",
+    "reka-ui": "^2.9.6",
+    "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.0",
+    "tw-animate-css": "^1.4.0",
     "vue": "^3.5.28",
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
-    "@restaurant-platform/types": "workspace:*"
+    "@restaurant-platform/types": "workspace:*",
+    "shadcn-nuxt": "^2.6.2"
   }
 }

@@ -49,5 +49,18 @@ export default defineNuxtConfig({
 
   modules: [
     '@pinia/nuxt',
+    '@nuxt/icon',
+    'shadcn-nuxt',
   ],
+
+  shadcn: {
+    prefix: '',
+    componentDir: '~/components/ui',
+  },
+
+  icon: {
+    serverBundle: {
+      collections: ['lucide'],
+    },
+  },
 })

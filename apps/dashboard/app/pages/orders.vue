@@ -4,35 +4,55 @@
       <template #actions>
         <BaseButton variant="primary" @click="openAddModal">
           <template #icon-left>
-            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
+            <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
           </template>
           Add Order
         </BaseButton>
       </template>
     </PageHeader>
 
-    <!-- Filter/Search -->
+    <!-- Status filter chips -->
+    <div class="mb-4 flex flex-wrap gap-2">
+      <button
+        v-for="opt in statusOptions"
+        :key="opt.value"
+        type="button"
+        :aria-pressed="filterStatus === opt.value"
+        :class="[
+          'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors',
+          filterStatus === opt.value
+            ? 'border-blue-300 bg-blue-50 text-blue-700'
+            : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+        ]"
+        @click="filterStatus = opt.value"
+      >
+        <span v-if="opt.value" class="h-2 w-2 rounded-full" :class="opt.dot" />
+        {{ opt.label }}
+        <span class="text-xs text-gray-400">{{ statusCount(opt.value) }}</span>
+      </button>
+    </div>
+
+    <!-- Search -->
     <div class="mb-6 flex flex-col gap-4 rounded-lg bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-      <div class="flex flex-1 gap-2">
+      <div class="relative flex-1">
+        <Icon name="lucide:search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <label for="orders-search" class="sr-only">Search orders</label>
         <input
+          id="orders-search"
           v-model="searchTerm"
           type="text"
-          placeholder="Search orders..."
-          class="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          placeholder="Search by table or order #..."
+          class="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-9 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
-        <select
-          v-model="filterStatus"
-          class="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        <button
+          v-if="searchTerm"
+          type="button"
+          class="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          aria-label="Clear search"
+          @click="searchTerm = ''"
         >
-          <option value="">All Statuses</option>
-          <option value="pending">Pending</option>
-          <option value="preparing">Preparing</option>
-          <option value="served">Served</option>
-          <option value="paid">Paid</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+          <Icon name="lucide:x" class="h-4 w-4" />
+        </button>
       </div>
     </div>
 
@@ -44,16 +64,12 @@
     <!-- Empty state -->
     <EmptyState v-else-if="filteredOrders.length === 0" title="No orders found" description="Add your first order to get started.">
       <template #icon>
-        <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
+        <Icon name="lucide:shopping-bag" class="h-6 w-6 text-gray-400" />
       </template>
       <template #action>
         <BaseButton variant="primary" @click="openAddModal">
           <template #icon-left>
-            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
+            <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
           </template>
           Add Order
         </BaseButton>
@@ -106,14 +122,10 @@
               <td class="px-4 py-4 align-top text-right text-sm">
                 <div class="flex justify-end space-x-2">
                   <IconButton label="Edit order" tone="primary" @click="openEditModal(order)">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6-6a2 2 0 012.828 2.828l-6 6a2 2 0 01-2.828-2.828z" />
-                    </svg>
+                    <Icon name="lucide:pencil" class="h-5 w-5" />
                   </IconButton>
                   <IconButton label="Delete order" tone="danger" @click="openDeleteModal(order)">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                    <Icon name="lucide:trash-2" class="h-5 w-5" />
                   </IconButton>
                 </div>
               </td>
@@ -183,6 +195,20 @@ const filteredOrders = computed(() => {
   }
   return items
 })
+
+const statusOptions: { value: string; label: string; dot: string }[] = [
+  { value: '', label: 'All', dot: '' },
+  { value: 'pending', label: 'Pending', dot: 'bg-yellow-500' },
+  { value: 'preparing', label: 'Preparing', dot: 'bg-blue-500' },
+  { value: 'served', label: 'Served', dot: 'bg-green-500' },
+  { value: 'paid', label: 'Paid', dot: 'bg-purple-500' },
+  { value: 'cancelled', label: 'Cancelled', dot: 'bg-red-500' },
+]
+
+const statusCount = (value: string) => {
+  if (!value) return orders.value.length
+  return orders.value.filter((o: any) => o.status === value).length
+}
 
 const orderStatusColor = (status: string) => {
   const map: Record<string, 'yellow' | 'blue' | 'green' | 'purple' | 'red' | 'gray'> = {

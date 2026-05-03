@@ -50,9 +50,7 @@
 
       <BaseButton variant="primary" @click="openAddModal">
         <template #icon-left>
-          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
+          <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
         </template>
         Add Table
       </BaseButton>
@@ -66,16 +64,12 @@
     <!-- Empty state -->
     <EmptyState v-else-if="filteredTables.length === 0" title="No tables found" description="Add your first table to get started.">
       <template #icon>
-        <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
+        <Icon name="lucide:armchair" class="h-6 w-6 text-gray-400" />
       </template>
       <template #action>
         <BaseButton variant="primary" @click="openAddModal">
           <template #icon-left>
-            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
+            <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
           </template>
           Add Table
         </BaseButton>
@@ -99,24 +93,20 @@
         <!-- Hover actions -->
         <div class="absolute right-3 top-8 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           <button
-            class="inline-flex h-7 w-7 items-center justify-center rounded bg-white/80 text-gray-600 shadow-sm hover:bg-white hover:text-blue-600"
-            @click="openEditModal(table)"
+            type="button"
+            class="inline-flex h-7 w-7 items-center justify-center rounded bg-white/80 text-gray-600 shadow-sm hover:bg-white hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
             aria-label="Edit table"
-            title="Edit"
+            @click="openEditModal(table)"
           >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6-6a2 2 0 112.828 2.828l-6 6a2 2 0 01-2.828-2.828z" />
-            </svg>
+            <Icon name="lucide:pencil" class="h-4 w-4" />
           </button>
           <button
-            class="inline-flex h-7 w-7 items-center justify-center rounded bg-white/80 text-gray-600 shadow-sm hover:bg-white hover:text-red-600"
-            @click="openDeleteModal(table)"
+            type="button"
+            class="inline-flex h-7 w-7 items-center justify-center rounded bg-white/80 text-gray-600 shadow-sm hover:bg-white hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
             aria-label="Delete table"
-            title="Delete"
+            @click="openDeleteModal(table)"
           >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
+            <Icon name="lucide:trash-2" class="h-4 w-4" />
           </button>
         </div>
 
@@ -129,9 +119,7 @@
           v-if="table.status === 'occupied' && orderLabel(table)"
           class="mt-4 flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-sm text-gray-700"
         >
-          <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
+          <Icon name="lucide:receipt" class="h-4 w-4 text-gray-500" />
           <span class="font-medium">{{ orderLabel(table) }}</span>
         </div>
 
@@ -140,9 +128,7 @@
           v-if="table.status === 'reserved' && reservationLabel(table)"
           class="mt-4 flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-sm text-gray-700"
         >
-          <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
+          <Icon name="lucide:calendar" class="h-4 w-4 text-gray-500" />
           <span class="font-medium">{{ reservationLabel(table) }}</span>
         </div>
       </div>

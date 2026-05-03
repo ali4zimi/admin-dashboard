@@ -4,9 +4,7 @@
       <template v-if="isAdmin" #actions>
         <BaseButton variant="primary" @click="openAddModal">
           <template #icon-left>
-            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
+            <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
           </template>
           Add User
         </BaseButton>
@@ -15,18 +13,31 @@
 
     <!-- Filters -->
     <div class="mb-6 flex flex-col gap-4 rounded-lg bg-white p-4 shadow-sm sm:flex-row sm:items-center">
-      <div class="flex-1">
+      <div class="relative flex-1">
+        <Icon name="lucide:search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <label for="users-search" class="sr-only">Search users</label>
         <input
+          id="users-search"
           v-model="searchTerm"
           type="text"
           placeholder="Search users..."
-          class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          class="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-9 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           @input="debouncedSearch"
         />
+        <button
+          v-if="searchTerm"
+          type="button"
+          class="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          aria-label="Clear search"
+          @click="clearSearch"
+        >
+          <Icon name="lucide:x" class="h-4 w-4" />
+        </button>
       </div>
       <div class="flex gap-2">
         <select
           v-model="filterRole"
+          aria-label="Filter by role"
           class="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           @change="handleSearch"
         >
@@ -36,6 +47,7 @@
         </select>
         <select
           v-model="filterStatus"
+          aria-label="Filter by status"
           class="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           @change="handleSearch"
         >
@@ -43,6 +55,9 @@
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
         </select>
+        <BaseButton v-if="hasActiveFilters" variant="ghost" size="sm" @click="resetFilters">
+          Clear
+        </BaseButton>
       </div>
     </div>
 
@@ -54,16 +69,12 @@
     <!-- Empty state -->
     <EmptyState v-else-if="users.length === 0" title="No users found" description="Get started by adding your first user.">
       <template #icon>
-        <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-        </svg>
+        <Icon name="lucide:user-plus" class="h-6 w-6 text-gray-400" />
       </template>
       <template #action>
         <BaseButton variant="primary" @click="openAddModal">
           <template #icon-left>
-            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
+            <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
           </template>
           Add User
         </BaseButton>
@@ -88,11 +99,13 @@
             <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50">
               <td class="whitespace-nowrap px-6 py-4">
                 <div class="flex items-center">
-                  <img
-                    :src="avatarUrl(user)"
-                    :alt="userLabel(user)"
-                    class="h-10 w-10 rounded-full"
-                  />
+                  <div
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
+                    :class="avatarColor(userLabel(user))"
+                    aria-hidden="true"
+                  >
+                    {{ initials(userLabel(user)) }}
+                  </div>
                   <div class="ml-4">
                     <div class="text-sm font-medium text-gray-900">{{ userLabel(user) }}</div>
                   </div>
@@ -118,9 +131,7 @@
                     tone="success"
                     @click="openEditModal(user)"
                   >
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
+                    <Icon name="lucide:pencil" class="h-5 w-5" />
                   </IconButton>
                   <IconButton
                     v-if="isAdmin && user.id !== currentUserProfile?.id"
@@ -128,9 +139,7 @@
                     tone="danger"
                     @click="openDeleteModal(user)"
                   >
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                    <Icon name="lucide:trash-2" class="h-5 w-5" />
                   </IconButton>
                 </div>
               </td>
@@ -147,14 +156,12 @@
       </div>
     </div>
 
-    <!-- User Form Modal -->
     <UserFormModal
       v-model="showUserModal"
       :user="selectedUser"
       @saved="handleUserSaved"
     />
 
-    <!-- Delete Confirmation Modal -->
     <DeleteConfirmModal
       v-model="showDeleteModal"
       :item-id="userToDelete?.id || null"
@@ -168,38 +175,46 @@
 <script setup lang="ts">
 import type { UserData } from '@restaurant-platform/types/user.types'
 
-useHead({
-  title: 'User Management - Admin Panel'
-})
+useHead({ title: 'User Management - Admin Panel' })
 
 const { users, loading, fetchUsers, searchUsers, deleteUser } = useUsers()
 const { isAdmin, currentUserProfile } = useAuth()
 
-// Search and filters
 const searchTerm = ref('')
 const filterRole = ref('All Roles')
 const filterStatus = ref('All Status')
 
-// Modal states
 const showUserModal = ref(false)
 const showDeleteModal = ref(false)
 const selectedUser = ref<UserData | null>(null)
 const userToDelete = ref<UserData | null>(null)
 
-// Debounce search
+const hasActiveFilters = computed(() =>
+  searchTerm.value !== '' || filterRole.value !== 'All Roles' || filterStatus.value !== 'All Status'
+)
+
 let searchTimeout: ReturnType<typeof setTimeout>
 const debouncedSearch = () => {
   clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    handleSearch()
-  }, 300)
+  searchTimeout = setTimeout(handleSearch, 300)
 }
 
 const handleSearch = () => {
   searchUsers(searchTerm.value, filterRole.value, filterStatus.value)
 }
 
-// Modal handlers
+const clearSearch = () => {
+  searchTerm.value = ''
+  handleSearch()
+}
+
+const resetFilters = () => {
+  searchTerm.value = ''
+  filterRole.value = 'All Roles'
+  filterStatus.value = 'All Status'
+  handleSearch()
+}
+
 const openAddModal = () => {
   if (!isAdmin.value) return
   selectedUser.value = null
@@ -218,9 +233,7 @@ const openDeleteModal = (user: UserData) => {
   showDeleteModal.value = true
 }
 
-const handleUserSaved = () => {
-  // Users list is automatically updated by the composable
-}
+const handleUserSaved = () => {}
 
 const handleUserDeleted = async () => {
   if (userToDelete.value?.id) {
@@ -233,32 +246,42 @@ const userLabel = (user: UserData): string => {
   return user.displayName?.trim() || user.email?.split('@')[0] || 'Unnamed user'
 }
 
-const avatarUrl = (user: UserData): string => {
-  const encoded = encodeURIComponent(userLabel(user))
-  return `https://ui-avatars.com/api/?name=${encoded}&background=random`
+const initials = (name: string): string => {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  const first = parts[0]
+  const last = parts[parts.length - 1]
+  if (!first) return '?'
+  if (!last || parts.length === 1) return first.slice(0, 2).toUpperCase()
+  return ((first[0] ?? '') + (last[0] ?? '')).toUpperCase()
 }
 
-// Format date helper
+const avatarPalette = [
+  'bg-blue-500',
+  'bg-emerald-500',
+  'bg-amber-500',
+  'bg-rose-500',
+  'bg-violet-500',
+  'bg-cyan-500',
+  'bg-fuchsia-500',
+  'bg-orange-500',
+]
+
+const avatarColor = (name: string): string => {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash * 31 + name.charCodeAt(i)) | 0
+  }
+  return avatarPalette[Math.abs(hash) % avatarPalette.length] ?? avatarPalette[0]!
+}
+
 const formatDate = (date: any) => {
   if (!date) return '-'
-  
-  // Handle Firestore Timestamp
-  if (date?.toDate) {
-    date = date.toDate()
-  }
-  
-  // Handle Date object or string
+  if (date?.toDate) date = date.toDate()
   const d = new Date(date)
   if (isNaN(d.getTime())) return '-'
-  
-  return d.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-// Fetch users on mount
 onMounted(() => {
   fetchUsers()
 })
