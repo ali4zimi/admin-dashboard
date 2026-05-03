@@ -46,6 +46,7 @@
 import { ref, watch, computed } from 'vue'
 import { useTables } from '~/composables/restaurant/useTables'
 import BaseModal from '../BaseModal.vue'
+import type { TableStatus } from '@restaurant-platform/types/table.types'
 
 const props = defineProps<{ modelValue: boolean, table?: any }>()
 const emit = defineEmits(['update:modelValue', 'saved'])
@@ -64,7 +65,7 @@ const isEditing = computed(() => !!props.table?.id)
 const form = ref({
   name: '',
   capacity: 1,
-  status: 'available',
+  status: 'available' as TableStatus,
   currentOrderId: '',
   currentReservationId: '',
 })
@@ -84,7 +85,7 @@ watch(
       form.value = {
         name: '',
         capacity: 1,
-        status: 'available',
+        status: 'available' as TableStatus,
         currentOrderId: '',
         currentReservationId: '',
       }

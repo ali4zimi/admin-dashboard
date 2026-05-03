@@ -216,6 +216,7 @@ import { storeToRefs } from 'pinia'
 import { useReservations } from '~/composables/restaurant/useReservations'
 import { useTablesStore } from '~/stores/tables.store'
 import TableSelector from './TableSelector.vue'
+import type { ReservationStatus } from '@restaurant-platform/types/reservation.types'
 
 const props = defineProps<{ modelValue: boolean, reservation?: any }>()
 const emit = defineEmits(['update:modelValue', 'saved'])
@@ -263,7 +264,7 @@ const form = ref({
   tableIds: [] as string[],
   startTime: '',
   endTime: '',
-  status: 'pending',
+  status: 'pending' as ReservationStatus,
   depositAmount: 0,
   depositPaid: false,
   notes: '',

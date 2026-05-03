@@ -488,7 +488,9 @@ const onPointerDown = (index: number, event: PointerEvent) => {
     let newIndex = draggedIndex.value!
     for (let i = 0; i < rects.length; i++) {
       if (i === draggedIndex.value) continue
-      const midY = rects[i].top + rects[i].height / 2
+      const rect = rects[i]
+      if (!rect) continue
+      const midY = rect.top + rect.height / 2
       if (draggedIndex.value! < i && e.clientY > midY) {
         newIndex = i
       } else if (draggedIndex.value! > i && e.clientY < midY) {
@@ -515,6 +517,7 @@ const onPointerDown = (index: number, event: PointerEvent) => {
     // Compute new order
     const list = [...filteredCategories.value]
     const [moved] = list.splice(from, 1)
+    if (!moved) return
     list.splice(to, 0, moved)
     const orderedIds = list.map((c) => c.id!)
 
@@ -608,7 +611,9 @@ const onItemPointerDown = (categoryId: string, index: number, event: PointerEven
     let newIndex = itemDraggedIndex.value!
     for (let i = 0; i < itemRects.length; i++) {
       if (i === itemDraggedIndex.value) continue
-      const midY = itemRects[i].top + itemRects[i].height / 2
+      const rect = itemRects[i]
+      if (!rect) continue
+      const midY = rect.top + rect.height / 2
       if (itemDraggedIndex.value! < i && e.clientY > midY) {
         newIndex = i
       } else if (itemDraggedIndex.value! > i && e.clientY < midY) {
@@ -637,6 +642,7 @@ const onItemPointerDown = (categoryId: string, index: number, event: PointerEven
     const items = getVisibleCategoryItems(catId)
     const list = [...items]
     const [moved] = list.splice(from, 1)
+    if (!moved) return
     list.splice(to, 0, moved)
     const orderedIds = list.map((i) => i.id!)
 

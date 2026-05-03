@@ -37,42 +37,48 @@ import BaseModal from '~/components/BaseModal.vue'
 import MenuCategoryFormModal from '~/components/restaurant/MenuCategoryFormModal.vue'
 import DeleteConfirmModal from '~/components/DeleteConfirmModal.vue'
 import { useMenu } from '~/composables/restaurant/useMenu'
+import type { MenuCategory } from '@restaurant-platform/types/menu.types'
 
-const props = defineProps({
-  modelValue: Boolean,
-  categories: Array
-})
-const emit = defineEmits(['update:modelValue', 'created', 'updated', 'deleted'])
+defineProps<{
+  modelValue: boolean
+  categories: MenuCategory[]
+}>()
+const emit = defineEmits<{
+  'update:modelValue': [value: boolean]
+  created: [category: MenuCategory]
+  updated: [category: MenuCategory]
+  deleted: [category: MenuCategory]
+}>()
 
 const showCategoryForm = ref(false)
-const editingCategory = ref(null)
+const editingCategory = ref<MenuCategory | null>(null)
 const showDeleteModal = ref(false)
-const deletingCategory = ref(null)
+const deletingCategory = ref<MenuCategory | null>(null)
 
-const { createMenuCategory, updateMenuCategory, deleteMenuCategory } = useMenu()
+const { deleteMenuCategory } = useMenu()
 
 function openAddModal() {
   editingCategory.value = null
   showCategoryForm.value = true
 }
-function openEditModal(cat: any) {
+function openEditModal(cat: MenuCategory) {
   editingCategory.value = { ...cat }
   showCategoryForm.value = true
 }
-function openDeleteModal(cat: any) {
+function openDeleteModal(cat: MenuCategory) {
   deletingCategory.value = cat
   showDeleteModal.value = true
 }
-async function handleCreated(category: any) {
+async function handleCreated(category: MenuCategory) {
   emit('created', category)
   showCategoryForm.value = false
 }
-async function handleUpdated(category: any) {
+async function handleUpdated(category: MenuCategory) {
   emit('updated', category)
   showCategoryForm.value = false
 }
 async function handleDeleted() {
-  if (deletingCategory.value) {
+  if (deletingCategory.value?.id) {
     await deleteMenuCategory(deletingCategory.value.id)
     emit('deleted', deletingCategory.value)
     deletingCategory.value = null
